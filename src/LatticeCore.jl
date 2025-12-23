@@ -8,6 +8,18 @@ abstract type AbstractLattice{D} end
 export AbstractLattice
 
 """
+    FilteredLattice{D, L<:AbstractLattice{D}, F<:Function}
+struct for a filtered lattice, which is a sub-lattice defined by a filtering function.
+- `parent::L`: the parent lattice from which this filtered lattice is derived.
+- `filter_func::F`: a function that takes a coordinate vector and returns a Bool indicating whether the site is included in the filtered lattice.
+- `active_indices::Vector{Int}`: indices of the sites in the parent lattice that are included in the filtered lattice.
+"""
+struct FilteredLattice{D, L<:AbstractLattice{D}, F<:Function} <: AbstractLattice{D}
+    parent::L
+    filter_func::F # r -> norm(r) < R などの条件
+    active_indices::Vector{Int}
+end
+"""
     AbstractLatticeConnection
 abstract type for lattice connections (edges, bonds).
 """
@@ -31,29 +43,6 @@ end
 export Bond
 
 """
-    Connection
-Connection rules within or between unit cells.
-- `src_sub`: sublattice index of the start point (1, 2, ...)
-- `dst_sub`: sublattice index of the end point
-- `dx`, `dy`: relative cell position of the end point (0,0 means within the same unit cell)
-- `type`: type of the connection
-"""
-struct Connection <: AbstractLatticeConnection
-    src_sub::Int
-    dst_sub::Int
-    dx::Int
-    dy::Int
-    type::Int
-end
-export Connection
-
-"""
-    AbstractTopology
-Abstract type for lattice topologies.
-"""
-abstract type AbstractTopology{D} <: AbstractLattice{D} end
-
-"""
     AbstractBoundaryCondition
 Abstract type for boundary conditions.
 """
@@ -66,5 +55,12 @@ Abstract type for indexing schemes.
 """
 abstract type AbstractIndexing end
 export AbstractIndexing
+
+"""
+    AbstractConstructionMethod
+Abstract type for lattice construction methods.
+"""
+abstract type AbstractConstructionMethod end
+export AbstractConstructionMethod
 
 end
