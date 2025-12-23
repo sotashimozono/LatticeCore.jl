@@ -1,0 +1,7 @@
+name = "LatticeCore"
+uuid = "042fd91a-3fce-461f-9bc9-903d8e3f68e7"
+version = "0.1.0"
+authors = ["sotashimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
+
+[compat]
+julia = "1"
