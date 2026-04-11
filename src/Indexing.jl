@@ -67,9 +67,7 @@ function lattice_coord end
 # only RowMajor for 1D and let the others fall through (they would
 # simply error out; 1D Snake is actively meaningless).
 
-function site_index(
-    ::RowMajor, dims::NTuple{1,Int}, nsub::Int, coord::LatticeCoord{1}
-)
+function site_index(::RowMajor, dims::NTuple{1,Int}, nsub::Int, coord::LatticeCoord{1})
     cx = coord.cell[1]
     s = coord.sublattice
     return (cx - 1) * nsub + s
@@ -85,9 +83,7 @@ end
 #
 # site_index(cx, cy, s) = ((cy - 1) * Lx + (cx - 1)) * nsub + s
 
-function site_index(
-    ::RowMajor, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2}
-)
+function site_index(::RowMajor, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2})
     cx, cy = coord.cell
     s = coord.sublattice
     Lx = dims[1]
@@ -107,9 +103,7 @@ end
 #
 # site_index(cx, cy, s) = ((cx - 1) * Ly + (cy - 1)) * nsub + s
 
-function site_index(
-    ::ColMajor, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2}
-)
+function site_index(::ColMajor, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2})
     cx, cy = coord.cell
     s = coord.sublattice
     Ly = dims[2]

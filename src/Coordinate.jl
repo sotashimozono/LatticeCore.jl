@@ -61,8 +61,9 @@ struct LatticeCoord{D} <: AbstractCoordinate{D}
     end
 end
 
-LatticeCoord(cell::NTuple{D,Int}, sublattice::Int=1) where {D} =
+function LatticeCoord(cell::NTuple{D,Int}, sublattice::Int=1) where {D}
     LatticeCoord{D}(cell, sublattice)
+end
 
 # ---- HigherDimCoord --------------------------------------------------
 
