@@ -17,11 +17,11 @@ catch err
 end
 
 makedocs(;
-    sitename = "LatticeCore.jl",
-    format = Documenter.HTML(;
-        canonical = "https://codes.sota-shimozono.com/LatticeCore.jl/stable/",
-        prettyurls = get(ENV, "CI", "false") == "true",
-        mathengine = MathJax3(
+    sitename="LatticeCore.jl",
+    format=Documenter.HTML(;
+        canonical="https://codes.sota-shimozono.com/LatticeCore.jl/stable/",
+        prettyurls=get(ENV, "CI", "false") == "true",
+        mathengine=MathJax3(
             Dict(
                 :tex => Dict(
                     :inlineMath => [["\$", "\$"], ["\\(", "\\)"]],
@@ -30,10 +30,10 @@ makedocs(;
                 ),
             ),
         ),
-        assets = ["assets/favicon.ico", "assets/custom.css"],
+        assets=["assets/favicon.ico", "assets/custom.css"],
     ),
-    modules = [LatticeCore],
-    pages = [
+    modules=[LatticeCore],
+    pages=[
         "Home" => "index.md",
         "Getting Started" => "getting_started.md",
         "Concepts" => [
@@ -68,7 +68,7 @@ makedocs(;
         ],
         "Design notes" => "design.md",
     ],
-    checkdocs = :none,
+    checkdocs=:none,
 )
 
-deploydocs(; repo = "github.com/sotashimozono/LatticeCore.jl.git", devbranch = "main")
+deploydocs(; repo="github.com/sotashimozono/LatticeCore.jl.git", devbranch="main")
