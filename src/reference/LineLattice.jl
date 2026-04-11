@@ -150,11 +150,8 @@ is the 1×1 identity.
 basis_vectors(::LineLattice{T}) where {T} = SMatrix{1,1,T}(one(T))
 
 function reciprocal_lattice(lat::LineLattice{T}) where {T}
-    reciprocal_support(lat) isa HasReciprocal || throw(
-        ArgumentError(
-            "LineLattice has no reciprocal lattice under non-periodic BC"
-        ),
-    )
+    reciprocal_support(lat) isa HasReciprocal ||
+        throw(ArgumentError("LineLattice has no reciprocal lattice under non-periodic BC"))
     A = basis_vectors(lat)
     B = SMatrix{1,1,T}(T(2π) * inv(transpose(A)))
     return monkhorst_pack(B, (lat.N,))

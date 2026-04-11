@@ -142,9 +142,7 @@ Construct the reciprocal lattice for a Bravais-like `lat`. Concrete
 lattices are expected to specialise this method; the fallback throws.
 """
 function reciprocal_lattice(lat::AbstractLattice)
-    throw(
-        MethodError(reciprocal_lattice, (lat,))
-    )
+    throw(MethodError(reciprocal_lattice, (lat,)))
 end
 
 """
@@ -199,9 +197,7 @@ peak intensities.
 Concrete construction (building the projections, sampling peaks)
 lives in QuasiCrystal.jl.
 """
-struct HyperReciprocalLattice{
-    DPhys,DHyper,DPerp,T<:AbstractFloat,W<:AcceptanceWindow
-}
+struct HyperReciprocalLattice{DPhys,DHyper,DPerp,T<:AbstractFloat,W<:AcceptanceWindow}
     hyper_basis::SMatrix{DHyper,DHyper,T}
     parallel_proj::SMatrix{DPhys,DHyper,T}
     perp_proj::SMatrix{DPerp,DHyper,T}
