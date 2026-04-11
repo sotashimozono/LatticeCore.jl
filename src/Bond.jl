@@ -12,10 +12,10 @@ A bond (edge) connecting two sites of a lattice.
   `:dimer_strong`). Used as a dispatch key by anisotropic models
   (see the 07 MC layer design note).
 """
-struct Bond{D, T}
+struct Bond{D,T}
     i::Int
     j::Int
-    vector::SVector{D, T}
+    vector::SVector{D,T}
     type::Symbol
 end
 
@@ -26,7 +26,7 @@ Geometric center (midpoint) of the bond in real space. Useful for
 bond-centered observables and for position-dependent bond modifiers
 such as sine-square deformation.
 """
-function bond_center(lat::AbstractLattice{D, T}, bond::Bond{D, T}) where {D, T}
+function bond_center(lat::AbstractLattice{D,T}, bond::Bond{D,T}) where {D,T}
     return (position(lat, bond.i) + position(lat, bond.j)) / 2
 end
 
@@ -38,10 +38,10 @@ builds `Bond` objects on the fly from `neighbors(lat, i)` using the
 `:nearest` tag. Concrete lattices may override this for efficiency or
 to attach non-default bond types (e.g. dimer-strong vs dimer-weak).
 """
-function bonds(lat::AbstractLattice{D, T}) where {D, T}
+function bonds(lat::AbstractLattice{D,T}) where {D,T}
     return (
-        Bond{D, T}(i, j, position(lat, j) - position(lat, i), :nearest)
-        for i in 1:num_sites(lat) for j in neighbors(lat, i) if j > i
+        Bond{D,T}(i, j, position(lat, j) - position(lat, i), :nearest) for
+        i in 1:num_sites(lat) for j in neighbors(lat, i) if j > i
     )
 end
 
@@ -53,9 +53,9 @@ builds `Bond` objects from `neighbors(lat, i)` using the `:nearest`
 tag. This is the canonical entry point the 07 MC layer uses to walk
 interactions involving a given site.
 """
-function neighbor_bonds(lat::AbstractLattice{D, T}, i::Int) where {D, T}
+function neighbor_bonds(lat::AbstractLattice{D,T}, i::Int) where {D,T}
     return (
-        Bond{D, T}(i, j, position(lat, j) - position(lat, i), :nearest)
-        for j in neighbors(lat, i)
+        Bond{D,T}(i, j, position(lat, j) - position(lat, i), :nearest) for
+        j in neighbors(lat, i)
     )
 end

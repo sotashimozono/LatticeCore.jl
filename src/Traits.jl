@@ -71,7 +71,7 @@ Size trait for an ordinary finite lattice with the given per-axis cell
 counts.
 """
 struct FiniteSize{D} <: AbstractSizeTrait
-    dims::NTuple{D, Int}
+    dims::NTuple{D,Int}
 end
 
 """

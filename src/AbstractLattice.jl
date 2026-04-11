@@ -26,7 +26,7 @@ Abstract supertype for lattice types. Type parameters:
 See `dev/note/04_architecture/02_lattice_interface/README.md` for the
 design rationale.
 """
-abstract type AbstractLattice{D, T} end
+abstract type AbstractLattice{D,T} end
 
 # ---- Dimension helpers (fully determined by type parameters) ---------
 
@@ -35,9 +35,9 @@ abstract type AbstractLattice{D, T} end
 
 Spatial dimension `D` of the lattice.
 """
-dimension(::AbstractLattice{D, T}) where {D, T} = D
+dimension(::AbstractLattice{D,T}) where {D,T} = D
 
-Base.eltype(::Type{<:AbstractLattice{D, T}}) where {D, T} = T
+Base.eltype(::Type{<:AbstractLattice{D,T}}) where {D,T} = T
 Base.eltype(lat::AbstractLattice) = eltype(typeof(lat))
 
 # ---- Required interface (generic functions, methods added per type) --
@@ -57,8 +57,7 @@ Real-space position of site `i`. This extends `Base.position` so that
 downstream code can write `position(lat, i)` directly after
 `using LatticeCore`.
 """
-position(lat::AbstractLattice, i::Int) =
-    throw(MethodError(position, (lat, i)))
+position(lat::AbstractLattice, i::Int) = throw(MethodError(position, (lat, i)))
 
 """
     neighbors(lat::AbstractLattice, i::Int)
