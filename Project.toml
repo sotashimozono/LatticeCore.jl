@@ -1,6 +1,6 @@
 name = "LatticeCore"
 uuid = "84b1cbd8-bc58-4618-bc4f-b46a399f49f1"
-version = "0.7.1"
+version = "0.7.2"
 authors = ["sota shimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
