@@ -80,6 +80,7 @@ export materialize, require_finite
 
 # ---- Plotting (methods live in LatticeCorePlotsExt) ----
 export plot_lattice, plot_bonds!, plot_sites!
+export diffraction_pattern
 
 # ---- Reference lattices ----
 export LineLattice, SimpleSquareLattice, basis_vectors
