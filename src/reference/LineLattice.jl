@@ -1,33 +1,39 @@
 """
-    LineLattice{T, B <: AbstractBoundaryCondition}(N, boundary)
+    LineLattice{T, B <: LatticeBoundary}(N, boundary)
 
-A 1D linear chain of `N` sites with unit spacing. The type parameter
-`B` selects the boundary condition: `PBC` (periodic) or `OBC` (open).
+A 1D linear chain of `N` sites with unit spacing. `boundary` is a
+[`LatticeBoundary`](@ref) whose single axis component is one of
+[`PeriodicAxis`](@ref), [`OpenAxis`](@ref), or [`TwistedAxis`](@ref).
 
-This is LatticeCore's simplest reference implementation; paired with
-`SimpleSquareLattice` it is also the canonical mock used by downstream
-Monte Carlo unit tests.
+LatticeCore's simplest reference implementation; paired with
+[`SimpleSquareLattice`](@ref) it is also the canonical mock used by
+downstream Monte Carlo unit tests.
 
-# Example
+# Examples
 ```julia
-julia> lat = LineLattice(5, PBC());
+# Default: 1D periodic
+line = LineLattice(5)
 
-julia> num_sites(lat)
-5
+# Open boundary chain
+chain = LineLattice(5, OpenAxis())
 
-julia> neighbors(lat, 1)
-2-element Vector{Int64}:
- 5
- 2
+# Explicit LatticeBoundary (e.g. with a twist)
+twisted = LineLattice(5, LatticeBoundary((TwistedAxis(π/4),)))
 ```
 """
-struct LineLattice{T<:AbstractFloat,B<:AbstractBoundaryCondition} <: AbstractLattice{1,T}
+struct LineLattice{T<:AbstractFloat,B<:LatticeBoundary} <: AbstractLattice{1,T}
     N::Int
     boundary::B
 end
 
-# Convenience constructor: default to Float64 positions.
-function LineLattice(N::Int, boundary::B=PBC()) where {B<:AbstractBoundaryCondition}
+# Convenience constructors: default to Float64 positions. The axis BC
+# is wrapped in a `LatticeBoundary` automatically so users can write
+# `LineLattice(5, PeriodicAxis())` instead of the explicit tuple form.
+function LineLattice(N::Int, axis::AbstractAxisBC=PeriodicAxis())
+    return LineLattice(N, LatticeBoundary((axis,), NoModifier()))
+end
+
+function LineLattice(N::Int, boundary::B) where {B<:LatticeBoundary}
     return LineLattice{Float64,B}(N, boundary)
 end
 
@@ -37,30 +43,61 @@ num_sites(l::LineLattice) = l.N
 
 position(l::LineLattice{T}, i::Int) where {T} = SVector{1,T}(T(i))
 
-function neighbors(l::LineLattice{T,PBC}, i::Int) where {T}
-    # `unique!` collapses the degenerate N == 2 case (both neighbours
-    # point to the other site) to a single entry.
-    return unique!([mod1(i - 1, l.N), mod1(i + 1, l.N)])
-end
-
-function neighbors(l::LineLattice{T,OBC}, i::Int) where {T}
-    return filter(j -> 1 <= j <= l.N, [i - 1, i + 1])
+function neighbors(l::LineLattice, i::Int)
+    ax = l.boundary.axes[1]
+    ns = Int[]
+    seen = Set{Int}()
+    for step in (i + 1, i - 1)
+        j, ok = apply_axis_bc(ax, step, l.N)
+        if ok && j != i && !(j in seen)
+            push!(ns, j)
+            push!(seen, j)
+        end
+    end
+    return ns
 end
 
 boundary(l::LineLattice) = l.boundary
 
 size_trait(l::LineLattice) = FiniteSize((l.N,))
 
+# ---- Bond iteration with wrapped (unit) displacement vectors ---------
+
+function neighbor_bonds(l::LineLattice{T}, i::Int) where {T}
+    ax = l.boundary.axes[1]
+    out = Bond{1,T}[]
+    seen = Set{Int}()
+    for (step, dx) in ((i + 1, T(1)), (i - 1, T(-1)))
+        j, ok = apply_axis_bc(ax, step, l.N)
+        if ok && j != i && !(j in seen)
+            push!(out, Bond{1,T}(i, j, SVector{1,T}(dx), :nearest))
+            push!(seen, j)
+        end
+    end
+    return out
+end
+
+function bonds(l::LineLattice{T}) where {T}
+    return (b for i in 1:num_sites(l) for b in neighbor_bonds(l, i) if b.j > b.i)
+end
+
 # ---- Trait overrides ----
 
 topology(::LineLattice) = TopologyTrait{:line}()
 
-periodicity(::LineLattice{T,PBC}) where {T} = Periodic()
-periodicity(::LineLattice{T,OBC}) where {T} = Aperiodic()
+function periodicity(l::LineLattice)
+    ax = l.boundary.axes[1]
+    return ax isa OpenAxis ? Aperiodic() : Periodic()
+end
 
-# PBC chain is bipartite iff the cycle length N is even.
-is_bipartite(l::LineLattice{T,PBC}) where {T} = iseven(l.N)
-is_bipartite(::LineLattice{T,OBC}) where {T} = true
+# A 1D chain with PBC/TwistedBC is bipartite iff the cycle length is even.
+# Open chain is always bipartite.
+function is_bipartite(l::LineLattice)
+    ax = l.boundary.axes[1]
+    return ax isa OpenAxis ? true : iseven(l.N)
+end
 
-reciprocal_support(::LineLattice{T,PBC}) where {T} = HasReciprocal()
-reciprocal_support(::LineLattice{T,OBC}) where {T} = NoReciprocal()
+function reciprocal_support(l::LineLattice)
+    ax = l.boundary.axes[1]
+    return ax isa OpenAxis ? NoReciprocal() : HasReciprocal()
+end
