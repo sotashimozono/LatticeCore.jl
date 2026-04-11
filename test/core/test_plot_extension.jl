@@ -104,7 +104,9 @@ end
         SVector(0.0, -1.0),
     ]
     intensities_2d = [1.0, 0.5, 0.5, 0.5, 0.5]
-    hyper_indices_2d = [(0, 0, 0, 0), (1, 0, 0, 0), (-1, 0, 0, 0), (0, 1, 0, 0), (0, -1, 0, 0)]
+    hyper_indices_2d = [
+        (0, 0, 0, 0), (1, 0, 0, 0), (-1, 0, 0, 0), (0, 1, 0, 0), (0, -1, 0, 0)
+    ]
     bps2 = BraggPeakSet{2,4,Float64}(peaks_2d, intensities_2d, hyper_indices_2d)
 
     p2 = diffraction_pattern(bps2; title="2D test")
