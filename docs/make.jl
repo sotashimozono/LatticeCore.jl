@@ -1,4 +1,4 @@
-using MyModule
+using LatticeCore
 using Documenter
 using Downloads
 
@@ -11,9 +11,9 @@ Downloads.download("https://github.com/sotashimozono.png", favicon_path)
 Downloads.download("https://github.com/sotashimozono.png", logo_path)
 
 makedocs(;
-    sitename="MyModule.jl",
+    sitename="LatticeCore.jl",
     format=Documenter.HTML(;
-        canonical="https://codes.sota-shimozono.com/MyModule.jl/stable/",
+        canonical="https://codes.sota-shimozono.com/LatticeCore.jl/stable/",
         prettyurls=get(ENV, "CI", "false") == "true",
         mathengine=MathJax3(
             Dict(
@@ -26,8 +26,8 @@ makedocs(;
         ),
         assets=["assets/favicon.ico", "assets/custom.css"],
     ),
-    modules=[MyModule],
+    modules=[LatticeCore],
     pages=["Home" => "index.md"],
 )
 
-deploydocs(; repo="github.com/sotashimozono/MyModule.jl.git", devbranch="main")
+deploydocs(; repo="github.com/sotashimozono/LatticeCore.jl.git", devbranch="main")

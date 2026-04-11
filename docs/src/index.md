@@ -1,7 +1,7 @@
-# MyModule.jl
+# LatticeCore.jl
 
 ## Models
 
 ```@autodocs
-Modules = [MyModule]
+Modules = [LatticeCore]
 ```
