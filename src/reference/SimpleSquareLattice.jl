@@ -151,3 +151,24 @@ function reciprocal_support(l::SimpleSquareLattice)
     all_periodic = all(!(a isa OpenAxis) for a in l.boundary.axes)
     return all_periodic ? HasReciprocal() : NoReciprocal()
 end
+
+# ---- Coordinate conversions ----
+
+"""
+    to_real(lat::SimpleSquareLattice, coord::LatticeCoord{2}) → RealSpace
+
+Interpret the lattice coordinate as a unit-spacing Cartesian position.
+"""
+function to_real(::SimpleSquareLattice{T}, coord::LatticeCoord{2}) where {T}
+    return RealSpace{2,T}(SVector{2,T}(T(coord.cell[1]), T(coord.cell[2])))
+end
+
+"""
+    to_lattice(lat::SimpleSquareLattice, rs::RealSpace{2}) → LatticeCoord{2}
+
+Inverse of `to_real`: round each real-space component to the nearest
+integer cell index.
+"""
+function to_lattice(::SimpleSquareLattice, rs::RealSpace{2})
+    return LatticeCoord((round(Int, rs.x[1]), round(Int, rs.x[2])), 1)
+end

@@ -12,6 +12,8 @@ include("Traits.jl")
 include("AbstractLattice.jl")
 include("Bond.jl")
 include("BoundaryCondition.jl")
+include("Coordinate.jl")
+include("Indexing.jl")
 include("reference/LineLattice.jl")
 include("reference/SimpleSquareLattice.jl")
 
@@ -36,6 +38,14 @@ export AbstractBoundaryCondition
 export AbstractAxisBC, PeriodicAxis, OpenAxis, TwistedAxis
 export AbstractBoundaryModifier, NoModifier, SSD
 export LatticeBoundary, apply_axis_bc, axis_phase, bond_weight
+
+# ---- Coordinate systems ----
+export AbstractCoordinate, RealSpace, LatticeCoord, HigherDimCoord
+export to_real, to_lattice, to_hyper
+
+# ---- Indexing ----
+export AbstractIndexing, RowMajor, ColMajor, Snake
+export site_index, lattice_coord
 
 # ---- Reference lattices ----
 export LineLattice, SimpleSquareLattice
