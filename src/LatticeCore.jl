@@ -19,6 +19,7 @@ include("Coordinate.jl")
 include("Indexing.jl")
 include("MomentumLattice.jl")
 include("StructureFactor.jl")
+include("LazyInfinite.jl")
 include("reference/LineLattice.jl")
 include("reference/SimpleSquareLattice.jl")
 
@@ -72,6 +73,9 @@ export reciprocal_lattice, fourier_module, momentum_lattice
 export monkhorst_pack, gamma_centered
 export structure_factor
 export AcceptanceWindow, HyperReciprocalLattice, BraggPeakSet
+
+# ---- Lazy / infinite ----
+export materialize, require_finite
 
 # ---- Reference lattices ----
 export LineLattice, SimpleSquareLattice, basis_vectors
