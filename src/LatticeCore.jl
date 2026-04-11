@@ -11,6 +11,9 @@ import Base: position
 include("Traits.jl")
 include("AbstractLattice.jl")
 include("Bond.jl")
+include("BoundaryCondition.jl")
+include("reference/LineLattice.jl")
+include("reference/SimpleSquareLattice.jl")
 
 # ---- AbstractLattice ----
 export AbstractLattice
@@ -27,5 +30,11 @@ export AbstractReciprocalSupport, HasReciprocal, HasFourierModule, NoReciprocal
 export reciprocal_support
 export AbstractSizeTrait, FiniteSize, InfiniteSize, QuasiInfiniteSize
 export size_trait, is_finite
+
+# ---- Boundary conditions ----
+export AbstractBoundaryCondition, PBC, OBC
+
+# ---- Reference lattices ----
+export LineLattice, SimpleSquareLattice
 
 end # module LatticeCore
