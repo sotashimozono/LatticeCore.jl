@@ -20,8 +20,9 @@ LatticeCore.site_layout(::_InfiniteChain) = UniformLayout(IsingSite())
 
 struct _InfiniteChainAbstract end
 
-LatticeCore.materialize(::_InfiniteChainAbstract; depth::Int) =
+function LatticeCore.materialize(::_InfiniteChainAbstract; depth::Int)
     LineLattice(depth, PeriodicAxis())
+end
 
 @testset "LazyInfinite" begin
     @testset "require_finite on finite lattices is a no-op" begin
