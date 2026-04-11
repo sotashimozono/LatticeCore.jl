@@ -33,20 +33,35 @@ open_sq = SimpleSquareLattice(3, 3, OpenAxis())
 cylinder = SimpleSquareLattice(3, 3, LatticeBoundary((PeriodicAxis(), OpenAxis())))
 ```
 """
-struct SimpleSquareLattice{T<:AbstractFloat,B<:LatticeBoundary} <: AbstractLattice{2,T}
+struct SimpleSquareLattice{T<:AbstractFloat,B<:LatticeBoundary,L<:AbstractSiteLayout} <:
+       AbstractLattice{2,T}
     Lx::Int
     Ly::Int
     boundary::B
+    layout::L
 end
 
 # Convenience constructors. The single-axis overload applies the same
 # BC to both axes; mixed cases go through `LatticeBoundary` directly.
-function SimpleSquareLattice(Lx::Int, Ly::Int, axis::AbstractAxisBC=PeriodicAxis())
-    return SimpleSquareLattice(Lx, Ly, LatticeBoundary((axis, axis), NoModifier()))
+# The site layout defaults to a uniform Ising layout.
+function SimpleSquareLattice(
+    Lx::Int,
+    Ly::Int,
+    axis::AbstractAxisBC=PeriodicAxis();
+    layout::AbstractSiteLayout=UniformLayout(IsingSite()),
+)
+    return SimpleSquareLattice(Lx, Ly, LatticeBoundary((axis, axis), NoModifier()); layout)
 end
 
-function SimpleSquareLattice(Lx::Int, Ly::Int, boundary::B) where {B<:LatticeBoundary}
-    return SimpleSquareLattice{Float64,B}(Lx, Ly, boundary)
+function SimpleSquareLattice(
+    Lx::Int,
+    Ly::Int,
+    boundary::LatticeBoundary;
+    layout::AbstractSiteLayout=UniformLayout(IsingSite()),
+)
+    return SimpleSquareLattice{Float64,typeof(boundary),typeof(layout)}(
+        Lx, Ly, boundary, layout
+    )
 end
 
 # ---- Private row-major coordinate helpers ----
@@ -102,6 +117,8 @@ function neighbors(l::SimpleSquareLattice, i::Int)
 end
 
 boundary(l::SimpleSquareLattice) = l.boundary
+
+site_layout(l::SimpleSquareLattice) = l.layout
 
 size_trait(l::SimpleSquareLattice) = FiniteSize((l.Lx, l.Ly))
 

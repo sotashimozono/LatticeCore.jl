@@ -129,4 +129,20 @@ using Test
             @test to_lattice(lat, to_real(lat, lc_i)) == lc_i
         end
     end
+
+    @testset "site layout integration" begin
+        # Default: UniformLayout(IsingSite())
+        lat = LineLattice(5)
+        @test site_layout(lat) isa UniformLayout{IsingSite{Int8}}
+        @test site_type(lat, 1) isa IsingSite
+        @test site_type(lat, 3) === site_type(lat, 5)
+
+        # num_sublattices / sublattice default to 1
+        @test num_sublattices(lat) == 1
+        @test sublattice(lat, 3) == 1
+
+        # Swap in an XY layout via keyword
+        lat_xy = LineLattice(5; layout=UniformLayout(XYSite()))
+        @test site_type(lat_xy, 2) isa XYSite
+    end
 end

@@ -119,3 +119,38 @@ algorithms should guard against non-finite lattices with this
 predicate.
 """
 is_finite(lat::AbstractLattice) = size_trait(lat) isa FiniteSize
+
+# ---- Site type interface --------------------------------------------
+
+"""
+    site_layout(lat::AbstractLattice) → AbstractSiteLayout
+
+Return the lattice's site layout. Concrete lattices must either
+implement this method directly or hold an `AbstractSiteLayout` in a
+field of that name.
+"""
+function site_layout end
+
+"""
+    site_type(lat::AbstractLattice, i::Int) → AbstractSiteType
+
+Site type at site `i`. Defaults to `site_type(site_layout(lat), i)`
+so concrete lattices only need to implement [`site_layout`](@ref).
+"""
+site_type(lat::AbstractLattice, i::Int) = site_type(site_layout(lat), i)
+
+"""
+    num_sublattices(lat::AbstractLattice) → Int
+
+Number of **geometric** sublattices in the lattice. Defaults to `1`
+so lattices that are not sublattice-aware need not override.
+"""
+num_sublattices(::AbstractLattice) = 1
+
+"""
+    sublattice(lat::AbstractLattice, i::Int) → Int
+
+Geometric sublattice id (1-based) of site `i`. Defaults to `1`,
+matching the default [`num_sublattices`](@ref) of 1.
+"""
+sublattice(::AbstractLattice, ::Int) = 1
