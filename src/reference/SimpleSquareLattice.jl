@@ -50,9 +50,7 @@ function SimpleSquareLattice(
     axis::AbstractAxisBC=PeriodicAxis();
     layout::AbstractSiteLayout=UniformLayout(IsingSite()),
 )
-    return SimpleSquareLattice(
-        Lx, Ly, LatticeBoundary((axis, axis), NoModifier()); layout
-    )
+    return SimpleSquareLattice(Lx, Ly, LatticeBoundary((axis, axis), NoModifier()); layout)
 end
 
 function SimpleSquareLattice(

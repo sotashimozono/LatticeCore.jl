@@ -46,9 +46,7 @@ function LineLattice(
 end
 
 function LineLattice(
-    N::Int,
-    boundary::LatticeBoundary;
-    layout::AbstractSiteLayout=UniformLayout(IsingSite()),
+    N::Int, boundary::LatticeBoundary; layout::AbstractSiteLayout=UniformLayout(IsingSite())
 )
     return LineLattice{Float64,typeof(boundary),typeof(layout)}(N, boundary, layout)
 end
