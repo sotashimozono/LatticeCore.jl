@@ -1,9 +1,14 @@
 """
-    LineLattice{T, B <: LatticeBoundary}(N, boundary)
+    LineLattice{T, B, L}(N, boundary, layout)
 
-A 1D linear chain of `N` sites with unit spacing. `boundary` is a
-[`LatticeBoundary`](@ref) whose single axis component is one of
-[`PeriodicAxis`](@ref), [`OpenAxis`](@ref), or [`TwistedAxis`](@ref).
+A 1D linear chain of `N` sites with unit spacing.
+
+- `boundary` is a [`LatticeBoundary`](@ref) whose single axis
+  component is one of [`PeriodicAxis`](@ref), [`OpenAxis`](@ref), or
+  [`TwistedAxis`](@ref).
+- `layout` is an [`AbstractSiteLayout`](@ref) that decides which
+  [`AbstractSiteType`](@ref) lives on each site. The default is
+  `UniformLayout(IsingSite())`.
 
 LatticeCore's simplest reference implementation; paired with
 [`SimpleSquareLattice`](@ref) it is also the canonical mock used by
@@ -11,30 +16,41 @@ downstream Monte Carlo unit tests.
 
 # Examples
 ```julia
-# Default: 1D periodic
+# Default: PBC + UniformLayout(IsingSite())
 line = LineLattice(5)
 
 # Open boundary chain
 chain = LineLattice(5, OpenAxis())
 
-# Explicit LatticeBoundary (e.g. with a twist)
-twisted = LineLattice(5, LatticeBoundary((TwistedAxis(π/4),)))
+# Custom layout (e.g. XY sites)
+xy = LineLattice(5; layout = UniformLayout(XYSite()))
 ```
 """
-struct LineLattice{T<:AbstractFloat,B<:LatticeBoundary} <: AbstractLattice{1,T}
+struct LineLattice{T<:AbstractFloat,B<:LatticeBoundary,L<:AbstractSiteLayout} <:
+       AbstractLattice{1,T}
     N::Int
     boundary::B
+    layout::L
 end
 
-# Convenience constructors: default to Float64 positions. The axis BC
-# is wrapped in a `LatticeBoundary` automatically so users can write
-# `LineLattice(5, PeriodicAxis())` instead of the explicit tuple form.
-function LineLattice(N::Int, axis::AbstractAxisBC=PeriodicAxis())
-    return LineLattice(N, LatticeBoundary((axis,), NoModifier()))
+# Convenience constructors: default to Float64 positions and an Ising
+# UniformLayout. The axis BC is wrapped in a `LatticeBoundary`
+# automatically so users can write `LineLattice(5, PeriodicAxis())`
+# instead of the explicit tuple form.
+function LineLattice(
+    N::Int,
+    axis::AbstractAxisBC=PeriodicAxis();
+    layout::AbstractSiteLayout=UniformLayout(IsingSite()),
+)
+    return LineLattice(N, LatticeBoundary((axis,), NoModifier()); layout)
 end
 
-function LineLattice(N::Int, boundary::B) where {B<:LatticeBoundary}
-    return LineLattice{Float64,B}(N, boundary)
+function LineLattice(
+    N::Int,
+    boundary::LatticeBoundary;
+    layout::AbstractSiteLayout=UniformLayout(IsingSite()),
+)
+    return LineLattice{Float64,typeof(boundary),typeof(layout)}(N, boundary, layout)
 end
 
 # ---- Required interface ----
@@ -58,6 +74,8 @@ function neighbors(l::LineLattice, i::Int)
 end
 
 boundary(l::LineLattice) = l.boundary
+
+site_layout(l::LineLattice) = l.layout
 
 size_trait(l::LineLattice) = FiniteSize((l.N,))
 

@@ -9,6 +9,9 @@ using StaticArrays
 import Base: position
 
 include("Traits.jl")
+include("LatticeElement.jl")
+include("SiteType.jl")
+include("SiteLayout.jl")
 include("AbstractLattice.jl")
 include("Bond.jl")
 include("BoundaryCondition.jl")
@@ -20,6 +23,19 @@ include("reference/SimpleSquareLattice.jl")
 # ---- AbstractLattice ----
 export AbstractLattice
 export dimension, num_sites, position, positions, neighbors, boundary
+export site_layout, site_type, num_sublattices, sublattice
+
+# ---- Lattice elements ----
+export AbstractLatticeElement, VertexCenter, BondCenter, PlaquetteCenter, CellCenter
+export element_type
+
+# ---- Site types ----
+export AbstractSiteType
+export IsingSite, PottsSite, XYSite, HeisenbergSite, EmptySite
+export state_type, random_state, zero_state, domain
+
+# ---- Site layouts ----
+export AbstractSiteLayout, UniformLayout, SublatticeLayout, ExplicitLayout
 
 # ---- Bond ----
 export Bond, bond_center, bonds, neighbor_bonds

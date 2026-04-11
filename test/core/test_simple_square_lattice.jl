@@ -158,4 +158,31 @@ using Test
             @test position(lat, expected) == SVector(Float64(cx), Float64(cy))
         end
     end
+
+    @testset "site layout integration" begin
+        # Default UniformLayout(IsingSite())
+        lat = SimpleSquareLattice(3, 3)
+        @test site_layout(lat) isa UniformLayout{IsingSite{Int8}}
+        for i in 1:num_sites(lat)
+            @test site_type(lat, i) isa IsingSite
+        end
+
+        @test num_sublattices(lat) == 1
+        @test sublattice(lat, 5) == 1
+
+        # Custom layout via keyword argument
+        heis = SimpleSquareLattice(3, 3; layout=UniformLayout(HeisenbergSite()))
+        @test site_type(heis, 1) isa HeisenbergSite
+
+        # Boundary + custom layout together
+        cyl = SimpleSquareLattice(
+            3,
+            3,
+            LatticeBoundary((PeriodicAxis(), OpenAxis()));
+            layout=UniformLayout(XYSite()),
+        )
+        @test boundary(cyl).axes[1] isa PeriodicAxis
+        @test boundary(cyl).axes[2] isa OpenAxis
+        @test site_type(cyl, 4) isa XYSite
+    end
 end
