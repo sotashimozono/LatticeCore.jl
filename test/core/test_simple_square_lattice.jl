@@ -71,7 +71,8 @@ using Test
 
         # OBC Lx x Ly: (Lx-1) * Ly + Lx * (Ly-1)
         @test length(collect(bonds(SimpleSquareLattice(3, 3, OpenAxis())))) == 12
-        @test length(collect(bonds(SimpleSquareLattice(4, 5, OpenAxis())))) == (3 * 5) + (4 * 4)
+        @test length(collect(bonds(SimpleSquareLattice(4, 5, OpenAxis())))) ==
+            (3 * 5) + (4 * 4)
 
         # Cylinder: Lx PBC bonds per row (Lx) * Ly rows  +  (Ly-1) vertical bonds * Lx columns
         cyl = SimpleSquareLattice(3, 3, LatticeBoundary((PeriodicAxis(), OpenAxis())))
