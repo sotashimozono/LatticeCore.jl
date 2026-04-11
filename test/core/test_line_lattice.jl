@@ -110,4 +110,23 @@ using Test
         @test neighbors(lat, 2) == [1]
         @test length(collect(bonds(lat))) == 1
     end
+
+    @testset "coordinate conversions" begin
+        lat = LineLattice(5, PeriodicAxis())
+
+        rs = to_real(lat, LatticeCoord((3,)))
+        @test rs isa RealSpace{1,Float64}
+        @test rs.x == SVector(3.0)
+
+        lc = to_lattice(lat, RealSpace((4.0,)))
+        @test lc isa LatticeCoord{1}
+        @test lc.cell == (4,)
+        @test lc.sublattice == 1
+
+        # Round-trip
+        for i in 1:num_sites(lat)
+            lc_i = LatticeCoord((i,))
+            @test to_lattice(lat, to_real(lat, lc_i)) == lc_i
+        end
+    end
 end

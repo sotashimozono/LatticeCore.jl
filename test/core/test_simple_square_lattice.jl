@@ -128,4 +128,34 @@ using Test
         b = Bond{2,Float64}(1, 2, SVector(1.0, 0.0), :nearest)
         @test bond_center(lat, b) == SVector(1.5, 1.0)
     end
+
+    @testset "coordinate conversions" begin
+        lat = SimpleSquareLattice(3, 3, PeriodicAxis())
+
+        rs = to_real(lat, LatticeCoord((2, 3)))
+        @test rs isa RealSpace{2,Float64}
+        @test rs.x == SVector(2.0, 3.0)
+
+        lc = to_lattice(lat, RealSpace((2.0, 3.0)))
+        @test lc isa LatticeCoord{2}
+        @test lc.cell == (2, 3)
+        @test lc.sublattice == 1
+
+        # Round-trip over every site
+        for cx in 1:3, cy in 1:3
+            lc_in = LatticeCoord((cx, cy))
+            @test to_lattice(lat, to_real(lat, lc_in)) == lc_in
+        end
+    end
+
+    @testset "RowMajor indexing matches the lattice's internal layout" begin
+        lat = SimpleSquareLattice(3, 2, OpenAxis())
+        # The reference lattice uses row-major internally (implicit),
+        # so site_index(RowMajor(), (Lx, Ly), 1, LatticeCoord((cx, cy)))
+        # should agree with its internal site numbering.
+        for cx in 1:3, cy in 1:2
+            expected = site_index(RowMajor(), (3, 2), 1, LatticeCoord((cx, cy)))
+            @test position(lat, expected) == SVector(Float64(cx), Float64(cy))
+        end
+    end
 end

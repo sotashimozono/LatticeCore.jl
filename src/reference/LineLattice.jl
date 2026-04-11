@@ -101,3 +101,24 @@ function reciprocal_support(l::LineLattice)
     ax = l.boundary.axes[1]
     return ax isa OpenAxis ? NoReciprocal() : HasReciprocal()
 end
+
+# ---- Coordinate conversions ----
+
+"""
+    to_real(lat::LineLattice, coord::LatticeCoord{1}) → RealSpace
+
+Interpret the lattice coordinate as a unit-spacing Cartesian position.
+"""
+function to_real(::LineLattice{T}, coord::LatticeCoord{1}) where {T}
+    return RealSpace{1,T}(SVector{1,T}(T(coord.cell[1])))
+end
+
+"""
+    to_lattice(lat::LineLattice, rs::RealSpace{1}) → LatticeCoord{1}
+
+Inverse of `to_real`: round the real-space x coordinate to the
+nearest integer cell index.
+"""
+function to_lattice(::LineLattice, rs::RealSpace{1})
+    return LatticeCoord((round(Int, rs.x[1]),), 1)
+end
