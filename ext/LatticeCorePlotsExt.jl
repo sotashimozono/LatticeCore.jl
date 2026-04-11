@@ -72,25 +72,10 @@ function LatticeCore.plot_sites!(
 
     if color === :auto && num_sublattices(lat) > 1
         sub_ids = [sublattice(lat, i) for i in 1:N]
-        Plots.scatter!(
-            p,
-            xs,
-            ys;
-            ms=marker_size,
-            group=sub_ids,
-            markerstrokewidth=0,
-        )
+        Plots.scatter!(p, xs, ys; ms=marker_size, group=sub_ids, markerstrokewidth=0)
     else
         mc = color === :auto ? :steelblue : color
-        Plots.scatter!(
-            p,
-            xs,
-            ys;
-            ms=marker_size,
-            mc=mc,
-            markerstrokewidth=0,
-            label="",
-        )
+        Plots.scatter!(p, xs, ys; ms=marker_size, mc=mc, markerstrokewidth=0, label="")
     end
     return p
 end
@@ -118,12 +103,7 @@ function LatticeCore.plot_lattice(
     kwargs...,
 ) where {T}
     p = Plots.plot(;
-        xlabel="x",
-        ylims=(-0.5, 0.5),
-        yticks=[],
-        legend=:topright,
-        title=title,
-        kwargs...,
+        xlabel="x", ylims=(-0.5, 0.5), yticks=[], legend=:topright, title=title, kwargs...
     )
     show_bonds && plot_bonds!(p, lat; color=bond_color, lw=bond_width)
     show_sites && plot_sites!(p, lat; marker_size=site_size, color=site_color)
