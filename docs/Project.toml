@@ -1,0 +1,7 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+MyModule = "4f7774e9-efb7-42d6-b735-122dcc7ea7b8"
+
+[sources]
+MyModule = {path = ".."}

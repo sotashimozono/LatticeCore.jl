@@ -1,0 +1,10 @@
+name = "MyModule"
+uuid = "4f7774e9-efb7-42d6-b735-122dcc7ea7b8"
+version = "0.1.0"
+authors = ["sota shimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

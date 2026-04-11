@@ -1,0 +1,6 @@
+{
+  "name": "Julia Env",
+  // template.jl が公開したイメージを直接参照
+  "image": "ghcr.io/sotashimozono/template.jl:latest",
+  "postCreateCommand": "julia --project=. -e 'using Pkg; Pkg.instantiate()'"
+}
