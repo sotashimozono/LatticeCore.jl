@@ -51,3 +51,35 @@ sublattice, sites are grouped and coloured by sublattice id.
 Concrete methods live in the Plots extension.
 """
 function plot_sites! end
+
+"""
+    diffraction_pattern(ml::AbstractMomentumLattice; kwargs...)
+
+Visualise the Fourier-space "diffraction pattern" of a momentum
+lattice. Concrete methods live in the Plots extension and dispatch
+on the physical dimension of the momentum lattice:
+
+- `DPhys = 1` → stem plot of `intensity(k)` vs `k`
+- `DPhys = 2` → scatter of peak positions in `(kₓ, k_y)` with
+  marker size (and colour) proportional to intensity
+
+Typical usage on a quasicrystal:
+
+```julia
+using Plots, LatticeCore, QuasiCrystal
+qc = generate_fibonacci_projection(20)
+peaks = bragg_peaks(qc; kmax = 20.0, intensity_cutoff = 1e-3)
+diffraction_pattern(peaks)
+```
+
+# Common keyword arguments
+
+- `title` — plot title (default: "Diffraction pattern")
+- `marker_scale::Real` — multiplier applied to marker size in 2D
+  (default picks something reasonable; tune for your cutoff)
+- `color` — `Plots.jl` colour value or gradient for 2D scatter
+- `log_intensity::Bool` — if `true`, plot `log10(I/I_max)` instead
+  of `I`. Makes weaker peaks visible alongside Γ.
+- Any other keyword is forwarded to the underlying `Plots.plot`.
+"""
+function diffraction_pattern end

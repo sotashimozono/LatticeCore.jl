@@ -1,5 +1,6 @@
 using LatticeCore
 using Plots
+using StaticArrays
 using Test
 
 # Loading Plots triggers the LatticeCorePlotsExt extension, which
@@ -76,4 +77,45 @@ end
         dy = seg_y[i + 1] - seg_y[i]
         @test isapprox(hypot(dx, dy), 1.0; atol=1e-10)
     end
+end
+
+@testset "diffraction_pattern on BraggPeakSet" begin
+    # Build a tiny synthetic 1D BraggPeakSet (3 peaks: Γ + 2 side
+    # peaks). We can do this by hand — the physics has already been
+    # exercised in the QuasiCrystal test suite; here we just want
+    # the plot method to return a `Plots.Plot`.
+    peaks_1d = [SVector(0.0), SVector(1.0), SVector(-1.0)]
+    intensities_1d = [1.0, 0.3, 0.3]
+    hyper_indices_1d = [(0, 0), (1, 0), (-1, 0)]
+    bps1 = BraggPeakSet{1,2,Float64}(peaks_1d, intensities_1d, hyper_indices_1d)
+
+    p1 = diffraction_pattern(bps1; title="1D test")
+    @test p1 isa Plots.Plot
+
+    p1_log = diffraction_pattern(bps1; log_intensity=true)
+    @test p1_log isa Plots.Plot
+
+    # 2D case — 5 peaks in a plus + Γ configuration.
+    peaks_2d = [
+        SVector(0.0, 0.0),
+        SVector(1.0, 0.0),
+        SVector(-1.0, 0.0),
+        SVector(0.0, 1.0),
+        SVector(0.0, -1.0),
+    ]
+    intensities_2d = [1.0, 0.5, 0.5, 0.5, 0.5]
+    hyper_indices_2d = [
+        (0, 0, 0, 0), (1, 0, 0, 0), (-1, 0, 0, 0), (0, 1, 0, 0), (0, -1, 0, 0)
+    ]
+    bps2 = BraggPeakSet{2,4,Float64}(peaks_2d, intensities_2d, hyper_indices_2d)
+
+    p2 = diffraction_pattern(bps2; title="2D test")
+    @test p2 isa Plots.Plot
+
+    p2_log = diffraction_pattern(bps2; log_intensity=true, marker_scale=15.0)
+    @test p2_log isa Plots.Plot
+
+    # Uniform-intensity degenerate case: single peak at Γ.
+    bps_single = BraggPeakSet{2,4,Float64}([SVector(0.0, 0.0)], [1.0], [(0, 0, 0, 0)])
+    @test diffraction_pattern(bps_single) isa Plots.Plot
 end
