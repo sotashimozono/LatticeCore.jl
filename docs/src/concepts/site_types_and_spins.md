@@ -1,58 +1,180 @@
 # Site types and spin models
 
-This column is still being written. The short version:
+A lattice tells you where things live. A **site type** tells you
+what lives there. LatticeCore keeps the two on separate axes so
+that the same geometric skeleton can host an Ising spin, an XY
+rotor, a Heisenberg vector, a vacancy, or — in due course — a gauge
+link. This column explains the physics that motivates the choices
+and points at the code that implements them.
 
-## What is a site type?
+## Why separate site type from geometry?
 
-A **site type** tells LatticeCore what mathematical object lives on
-a single lattice site and how to sample it uniformly at random.
-Concretely, [`AbstractSiteType`](@ref) requires
+In textbook condensed matter the "site" is usually identified with
+the whole package: "a site on the square lattice carries an Ising
+spin". That shortcut breaks as soon as you want a **mixed-spin
+model** (Ising on A, XY on B), a **diluted** model (a site might be
+empty), or a **heterogeneous** model where disorder is attached to
+individual sites. Every time you conflate the two, your
+Hamiltonian has to reach into a tuple index and remember which
+sublattice this position belongs to, and you introduce bugs.
 
-- [`state_type`](@ref) — the Julia type that stores one state
-- [`random_state`](@ref) — a uniform sampler
+LatticeCore makes the separation explicit:
 
-and optionally
+- The geometric sublattice lives in
+  [`LatticeCoord`](@ref).`sublattice` — A, B, C, ... of the unit
+  cell, a property of *position*.
+- The physical degree of freedom lives in an
+  [`AbstractSiteType`](@ref) reached through
+  [`site_layout(lat)`](@ref) and [`site_type(lat, i)`](@ref) — a
+  property of *content*.
 
-- [`zero_state`](@ref), [`domain`](@ref), and
-  [`element_type`](@ref) for lifting the DOF onto bonds / plaquettes
-  / cells.
+An [`AbstractSiteLayout`](@ref) is the bridge. The three layouts
+LatticeCore ships ([`UniformLayout`](@ref),
+[`SublatticeLayout`](@ref), [`ExplicitLayout`](@ref)) cover the
+three natural ways that content can be homogeneous, sublattice-
+uniform, or fully heterogeneous.
 
 ## The classical spin ladder
 
 The archetypal site types form a ladder of increasing continuous
-symmetry:
+symmetry. Each rung makes physical sense in its own right and they
+all compose with the same lattice geometry:
 
-| Site type                | State space                | Symmetry group | Models            |
-| ------------------------ | -------------------------- | -------------- | ----------------- |
-| [`IsingSite`](@ref)      | ``\{-1, +1\}``             | ``\mathbb{Z}_2`` | Ising, RBIM     |
-| [`PottsSite{Q}`](@ref)   | ``\{1, \dots, Q\}``        | ``S_Q``         | Potts, clock     |
-| [`XYSite`](@ref)         | circle ``S^1``             | ``U(1) = SO(2)``  | XY, Villain   |
-| [`HeisenbergSite`](@ref) | sphere ``S^2 \subset \mathbb{R}^3`` | ``SO(3)`` | Heisenberg |
-| [`EmptySite`](@ref)      | singleton                  | trivial         | vacancies       |
+| Site type                | State space                  | Symmetry group       | Canonical model         |
+| ------------------------ | ---------------------------- | -------------------- | ----------------------- |
+| [`IsingSite`](@ref)      | ``\{-1, +1\}``               | ``\mathbb{Z}_2``     | Ising, Edwards–Anderson |
+| [`PottsSite{Q}`](@ref)   | ``\{1, \dots, Q\}``          | ``S_Q``              | ``Q``-state Potts       |
+| [`XYSite`](@ref)         | ``S^1``                      | ``U(1) \cong SO(2)`` | XY, Villain, BKT        |
+| [`HeisenbergSite`](@ref) | ``S^2 \subset \mathbb{R}^3`` | ``SO(3)``            | Heisenberg, J1–J2       |
 
-The pattern is standard condensed-matter: as you move down the
-table, the Mermin–Wagner theorem kicks in (no long-range order in
-2D for ``d \geq 2`` continuous groups at finite ``T``), the energy
-landscape becomes smoother, and the numerically appropriate Monte
-Carlo update changes (single-flip → cluster → overrelaxation,
-cluster → worm).
+As you move down the table:
 
-## Why this lives in LatticeCore
+- The state space goes from two points, to a small discrete set,
+  to a circle, to a sphere. The **configuration space grows**, and
+  so does the typical cost of a Monte Carlo update.
+- The symmetry group gets bigger and becomes continuous. Continuous
+  symmetries are protected by **Mermin–Wagner** in 2D at finite
+  temperature: they cannot be spontaneously broken, so the ordered
+  phase gives way to a *critical* phase (XY below the
+  Berezinskii–Kosterlitz–Thouless point) or to no ordered phase
+  at all (Heisenberg in 2D).
+- The numerically appropriate update changes: single-flip for
+  Ising, cluster for XY (Wolff), overrelaxation / cluster for
+  Heisenberg, worm for vertex models, and so on.
 
-A Monte Carlo runtime like `Lattice2DMonteCarlo.jl` needs to
-dispatch its local Hamiltonian on the site types at either end of a
-bond. Making `AbstractSiteType` part of LatticeCore — rather than
-the MC layer — means that *every* concrete lattice in the stack can
-describe what it carries, regardless of which MC runtime later
-consumes it.
+LatticeCore's [`random_state`](@ref) for each site type is the
+uniform sampler on the relevant state space:
 
-## TODO
+- `IsingSite`: a random element of ``\{-1, +1\}``.
+- `PottsSite{Q}`: a uniform integer in ``1..Q``.
+- `XYSite`: a uniform angle in ``[0, 2\pi)``.
+- `HeisenbergSite`: a uniform unit vector on ``S^2``, generated by
+  the Marsaglia (``z \sim U(-1, 1)``,
+  ``\phi \sim U(0, 2\pi)``) construction so no poles are
+  oversampled.
 
-- Worked example: how the Hamiltonian dispatch actually works when
-  A and B sublattices carry different site types (`SublatticeLayout`).
-- Heisenberg uniform sphere sampler (Marsaglia / Archimedes) and
-  why `HeisenbergSite` uses `SVector{3, Float64}`.
-- Mermin–Wagner in one paragraph and how it motivates the
-  Ising → Potts → XY → Heisenberg escalation.
-- How to build a custom site type for a bond-centered DOF
-  (dimer model, gauge link) via [`element_type`](@ref).
+## Storage types: why parameterise?
+
+Each spin flavour is parameterised on a storage type. `IsingSite{T}`
+defaults to `T = Int8` because a signed byte easily holds ``\pm 1``
+and gives 8× less memory pressure than `Int`. `XYSite{T}` defaults
+to `T = Float64`; `HeisenbergSite{T}` defaults to `SVector{3, T}`
+with `T = Float64`.
+
+The parameterisation exists because downstream MC code is often
+memory-bound on large lattices, and choosing the storage type
+per-lattice rather than per-package lets you trade memory against
+precision without forking the site type hierarchy. For a honest
+2D Ising sweep on a 1024 × 1024 lattice, `Int8` saves 3 MiB of
+resident memory per snapshot compared to `Int`, which is enough
+to fit one more observable in cache.
+
+## EmptySite and diluted models
+
+Not every site has a degree of freedom. Quenched vacancies, random
+dilution, and diluted Ising / XY / Heisenberg models all want a
+"no DOF here" site type. LatticeCore gives that a name:
+
+```julia
+struct EmptySite <: AbstractSiteType end
+state_type(::EmptySite) = Nothing
+random_state(::Any, ::EmptySite) = nothing
+```
+
+Paired with a [`SublatticeLayout`](@ref) or an
+[`ExplicitLayout`](@ref), an `EmptySite` carries zero state and
+lets the MC layer skip that index entirely. This composition —
+"an Ising site on most sites, `EmptySite` on the rest" — is the
+right way to express disorder in LatticeCore; the geometry is
+unchanged, only the content of individual sites is.
+
+## Element centering: bonds, plaquettes, and beyond
+
+A handful of models put their degrees of freedom somewhere other
+than the vertices:
+
+- **Dimer models** live on bonds. Every bond either carries a dimer
+  or doesn't.
+- **Lattice gauge theories** put gauge link variables on bonds and
+  matter fields on vertices. The two *coexist* on the same lattice.
+- **Vertex models** (ice rule, six-vertex, eight-vertex) put
+  oriented arrows on bonds with constraints at vertices.
+- **Flux / height models** put variables on plaquettes and enforce
+  rules on vertices or on bonds.
+
+LatticeCore reserves space for these without forcing them on users
+who only care about vertex-centred spins. Every
+[`AbstractSiteType`](@ref) carries an [`element_type`](@ref) trait,
+which defaults to [`VertexCenter`](@ref). A custom bond-centred
+type looks like
+
+```julia
+struct DimerVariable <: AbstractSiteType end
+LatticeCore.element_type(::DimerVariable) = BondCenter()
+LatticeCore.state_type(::DimerVariable) = Bool
+LatticeCore.random_state(rng, ::DimerVariable) = rand(rng, Bool)
+```
+
+and can be plugged into the standard [`UniformLayout`](@ref) as
+long as the MC runtime knows to read the `element_type` trait.
+For the homogeneous classical spin models that dominate this
+package's existing tests, this is invisible overhead.
+
+## Dispatch in the MC layer (preview)
+
+Classical Monte Carlo ultimately wants a method like
+
+```julia
+interaction(model, st_i::AbstractSiteType, st_j::AbstractSiteType,
+            bond::Bond, s_i, s_j) → Real
+```
+
+where `st_i` and `st_j` are the site types at each end of a bond.
+A uniform Ising model lives in the single-method world
+
+```julia
+interaction(m::IsingModel, ::IsingSite, ::IsingSite, b, s_i, s_j) =
+    -m.J * s_i * s_j
+```
+
+whereas a mixed-spin model picks out heterogeneous bonds via
+ordinary multiple dispatch
+
+```julia
+interaction(m::MixedSpinModel, ::IsingSite, ::XYSite, b, s, θ) =
+    -m.J_AB * s * cos(θ)
+```
+
+with no `if` ladders and no runtime tuple juggling. That is the
+payoff of keeping site types in a dedicated axis.
+
+## Further reading
+
+- K. Binder, *Monte Carlo Methods in Statistical Physics*,
+  Chapters on Ising, Potts, and XY models.
+- N. D. Mermin, H. Wagner, *Phys. Rev. Lett.* **17** 1133 (1966) —
+  the Mermin–Wagner theorem.
+- J. M. Kosterlitz, D. J. Thouless, *J. Phys. C* **6** 1181 (1973)
+  — the BKT transition in XY.
+- U. Wolff, *Phys. Rev. Lett.* **62** 361 (1989) — the cluster
+  algorithm used for O(N) models.
