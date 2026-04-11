@@ -189,3 +189,24 @@ integer cell index.
 function to_lattice(::SimpleSquareLattice, rs::RealSpace{2})
     return LatticeCoord((round(Int, rs.x[1]), round(Int, rs.x[2])), 1)
 end
+
+# ---- Reciprocal lattice ----
+
+"""
+    basis_vectors(lat::SimpleSquareLattice) → SMatrix{2, 2, T}
+
+Real-space basis matrix. For the unit-spacing reference square this
+is the 2×2 identity.
+"""
+basis_vectors(::SimpleSquareLattice{T}) where {T} = SMatrix{2,2,T}(one(T), zero(T), zero(T), one(T))
+
+function reciprocal_lattice(lat::SimpleSquareLattice{T}) where {T}
+    reciprocal_support(lat) isa HasReciprocal || throw(
+        ArgumentError(
+            "SimpleSquareLattice has no reciprocal lattice unless both axes are periodic",
+        ),
+    )
+    A = basis_vectors(lat)
+    B = SMatrix{2,2,T}(T(2π) * inv(transpose(A)))
+    return monkhorst_pack(B, (lat.Lx, lat.Ly))
+end
