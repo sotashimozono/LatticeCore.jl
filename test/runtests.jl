@@ -1,7 +1,7 @@
 ENV["GKSwstype"] = "100"
 
 using LatticeCore, Test
-const dirs = []
+const dirs = ["core"]
 
 const FIG_BASE = joinpath(pkgdir(LatticeCore), "docs", "src", "assets")
 const PATHS = Dict()
