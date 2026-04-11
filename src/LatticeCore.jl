@@ -32,7 +32,10 @@ export AbstractSizeTrait, FiniteSize, InfiniteSize, QuasiInfiniteSize
 export size_trait, is_finite
 
 # ---- Boundary conditions ----
-export AbstractBoundaryCondition, PBC, OBC
+export AbstractBoundaryCondition
+export AbstractAxisBC, PeriodicAxis, OpenAxis, TwistedAxis
+export AbstractBoundaryModifier, NoModifier, SSD
+export LatticeBoundary, apply_axis_bc, axis_phase, bond_weight
 
 # ---- Reference lattices ----
 export LineLattice, SimpleSquareLattice

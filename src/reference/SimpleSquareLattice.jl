@@ -1,15 +1,17 @@
 """
-    SimpleSquareLattice{T, B <: AbstractBoundaryCondition}(Lx, Ly, boundary)
+    SimpleSquareLattice{T, B <: LatticeBoundary}(Lx, Ly, boundary)
 
-A 2D square lattice of `Lx × Ly` sites with unit spacing. The type
-parameter `B` selects the boundary condition (`PBC` or `OBC`), applied
-uniformly to both axes.
+A 2D square lattice of `Lx × Ly` sites with unit spacing. `boundary`
+is a [`LatticeBoundary`](@ref) whose two axis components independently
+select between [`PeriodicAxis`](@ref), [`OpenAxis`](@ref), and
+[`TwistedAxis`](@ref) — so mixed BCs (e.g. cylinders) are supported
+natively.
 
-This is LatticeCore's 2D reference implementation. It exists so that
-the core interface can be exercised end-to-end without depending on
+LatticeCore's 2D reference implementation. It exists so that the core
+interface can be exercised end-to-end without depending on
 `Lattice2D.jl`. The production-grade 2D lattice, with the full
 topology catalogue (triangular, honeycomb, kagome, ...), sublattice
-site types, and reciprocal lattice machinery, lives in `Lattice2D.jl`.
+site types, and reciprocal-lattice machinery, lives in `Lattice2D.jl`.
 
 # Site indexing
 
@@ -19,30 +21,31 @@ Sites are laid out in row-major order:
 
 so sites 1..Lx form the bottom row, Lx+1..2Lx the next, and so on.
 
-# Example
+# Examples
 ```julia
-julia> lat = SimpleSquareLattice(3, 3, PBC());
+# Default: 2D PBC
+sq = SimpleSquareLattice(3, 3)
 
-julia> num_sites(lat)
-9
+# Uniform open boundary
+open_sq = SimpleSquareLattice(3, 3, OpenAxis())
 
-julia> position(lat, 5)   # middle of a 3x3 lattice
-2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
- 2.0
- 2.0
+# Cylinder: periodic in x, open in y
+cylinder = SimpleSquareLattice(3, 3, LatticeBoundary((PeriodicAxis(), OpenAxis())))
 ```
 """
-struct SimpleSquareLattice{T<:AbstractFloat,B<:AbstractBoundaryCondition} <:
-       AbstractLattice{2,T}
+struct SimpleSquareLattice{T<:AbstractFloat,B<:LatticeBoundary} <: AbstractLattice{2,T}
     Lx::Int
     Ly::Int
     boundary::B
 end
 
-# Convenience constructor: default to Float64 positions and PBC.
-function SimpleSquareLattice(
-    Lx::Int, Ly::Int, boundary::B=PBC()
-) where {B<:AbstractBoundaryCondition}
+# Convenience constructors. The single-axis overload applies the same
+# BC to both axes; mixed cases go through `LatticeBoundary` directly.
+function SimpleSquareLattice(Lx::Int, Ly::Int, axis::AbstractAxisBC=PeriodicAxis())
+    return SimpleSquareLattice(Lx, Ly, LatticeBoundary((axis, axis), NoModifier()))
+end
+
+function SimpleSquareLattice(Lx::Int, Ly::Int, boundary::B) where {B<:LatticeBoundary}
     return SimpleSquareLattice{Float64,B}(Lx, Ly, boundary)
 end
 
@@ -67,33 +70,33 @@ function position(l::SimpleSquareLattice{T}, i::Int) where {T}
     return SVector{2,T}(T(x), T(y))
 end
 
-function neighbors(l::SimpleSquareLattice{T,PBC}, i::Int) where {T}
+# Single helper shared with `neighbor_bonds`: walk the four axis steps,
+# apply per-axis BCs, deduplicate.
+function _square_steps(l::SimpleSquareLattice, i::Int)
     x, y = _site_to_xy(l, i)
-    ns = [
-        _xy_to_site(l, mod1(x + 1, l.Lx), y),
-        _xy_to_site(l, mod1(x - 1, l.Lx), y),
-        _xy_to_site(l, x, mod1(y + 1, l.Ly)),
-        _xy_to_site(l, x, mod1(y - 1, l.Ly)),
-    ]
-    # Collapse degenerate Lx == 2 / Ly == 2 cases that would otherwise
-    # return duplicate neighbours.
-    return unique!(ns)
+    bx, by = l.boundary.axes
+    steps = Tuple{Int,Int,Int,Int}[]           # (dx, dy, nx, ny)
+    for (dx, dy) in ((1, 0), (-1, 0), (0, 1), (0, -1))
+        nx_raw = x + dx
+        ny_raw = y + dy
+        nx, ok_x = apply_axis_bc(bx, nx_raw, l.Lx)
+        ok_x || continue
+        ny, ok_y = apply_axis_bc(by, ny_raw, l.Ly)
+        ok_y || continue
+        push!(steps, (dx, dy, nx, ny))
+    end
+    return steps
 end
 
-function neighbors(l::SimpleSquareLattice{T,OBC}, i::Int) where {T}
-    x, y = _site_to_xy(l, i)
+function neighbors(l::SimpleSquareLattice, i::Int)
     ns = Int[]
-    if x + 1 <= l.Lx
-        push!(ns, _xy_to_site(l, x + 1, y))
-    end
-    if x - 1 >= 1
-        push!(ns, _xy_to_site(l, x - 1, y))
-    end
-    if y + 1 <= l.Ly
-        push!(ns, _xy_to_site(l, x, y + 1))
-    end
-    if y - 1 >= 1
-        push!(ns, _xy_to_site(l, x, y - 1))
+    seen = Set{Int}()
+    for (_, _, nx, ny) in _square_steps(l, i)
+        j = _xy_to_site(l, nx, ny)
+        if j != i && !(j in seen)
+            push!(ns, j)
+            push!(seen, j)
+        end
     end
     return ns
 end
@@ -102,18 +105,49 @@ boundary(l::SimpleSquareLattice) = l.boundary
 
 size_trait(l::SimpleSquareLattice) = FiniteSize((l.Lx, l.Ly))
 
+# ---- Bond iteration with wrapped (unit) displacement vectors ---------
+
+function neighbor_bonds(l::SimpleSquareLattice{T}, i::Int) where {T}
+    out = Bond{2,T}[]
+    seen = Set{Int}()
+    for (dx, dy, nx, ny) in _square_steps(l, i)
+        j = _xy_to_site(l, nx, ny)
+        if j != i && !(j in seen)
+            vec = SVector{2,T}(T(dx), T(dy))
+            push!(out, Bond{2,T}(i, j, vec, :nearest))
+            push!(seen, j)
+        end
+    end
+    return out
+end
+
+function bonds(l::SimpleSquareLattice{T}) where {T}
+    return (b for i in 1:num_sites(l) for b in neighbor_bonds(l, i) if b.j > b.i)
+end
+
 # ---- Trait overrides ----
 
 topology(::SimpleSquareLattice) = TopologyTrait{:square}()
 
-periodicity(::SimpleSquareLattice{T,PBC}) where {T} = Periodic()
-periodicity(::SimpleSquareLattice{T,OBC}) where {T} = Aperiodic()
-
-# PBC square lattice is bipartite iff both axis lengths are even.
-function is_bipartite(l::SimpleSquareLattice{T,PBC}) where {T}
-    return iseven(l.Lx) && iseven(l.Ly)
+function periodicity(l::SimpleSquareLattice)
+    all_periodic = all(!(a isa OpenAxis) for a in l.boundary.axes)
+    return all_periodic ? Periodic() : Aperiodic()
 end
-is_bipartite(::SimpleSquareLattice{T,OBC}) where {T} = true
 
-reciprocal_support(::SimpleSquareLattice{T,PBC}) where {T} = HasReciprocal()
-reciprocal_support(::SimpleSquareLattice{T,OBC}) where {T} = NoReciprocal()
+# Square lattice graph bipartiteness:
+# - OBC axes never introduce odd cycles.
+# - PBC / Twisted cycles must have even length for bipartiteness.
+# We require every axis to be bipartite in isolation; the combined
+# graph is bipartite iff every axis along which the lattice wraps has
+# even length.
+function is_bipartite(l::SimpleSquareLattice)
+    bx, by = l.boundary.axes
+    bx_ok = (bx isa OpenAxis) || iseven(l.Lx)
+    by_ok = (by isa OpenAxis) || iseven(l.Ly)
+    return bx_ok && by_ok
+end
+
+function reciprocal_support(l::SimpleSquareLattice)
+    all_periodic = all(!(a isa OpenAxis) for a in l.boundary.axes)
+    return all_periodic ? HasReciprocal() : NoReciprocal()
+end
