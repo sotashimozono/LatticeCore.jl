@@ -25,3 +25,39 @@ struct PlaquetteCenter <: AbstractLatticeElement end
 
 """Cell-centered element: the centre of a 3D (or higher) cell."""
 struct CellCenter <: AbstractLatticeElement end
+
+# ---- Generic element-center accessors --------------------------------
+# Function declarations only; the actual methods need both
+# AbstractLattice and Bond and live in `Bond.jl` (loaded after both).
+
+"""
+    num_elements(lat, e::AbstractLatticeElement) → Int
+
+Number of geometric elements of centring `e` on `lat`. See
+`Bond.jl` for the default `VertexCenter` / `BondCenter` methods.
+"""
+function num_elements end
+
+"""
+    elements(lat, e::AbstractLatticeElement)
+
+Iterator over the underlying elements of centring `e` on `lat`. See
+`Bond.jl` for the default `VertexCenter` / `BondCenter` methods.
+"""
+function elements end
+
+"""
+    element_position(lat, e::AbstractLatticeElement, i::Int)
+
+Real-space position of the `i`-th element of centring `e` on `lat`.
+See `Bond.jl` for the default `VertexCenter` / `BondCenter` methods.
+"""
+function element_position end
+
+"""
+    element_positions(lat, e::AbstractLatticeElement)
+
+Iterator over the real-space positions of every element of centring
+`e` on `lat`. See `Bond.jl` for the default implementation.
+"""
+function element_positions end

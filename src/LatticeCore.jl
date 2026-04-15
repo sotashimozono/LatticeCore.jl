@@ -32,6 +32,7 @@ export site_layout, site_type, num_sublattices, sublattice
 # ---- Lattice elements ----
 export AbstractLatticeElement, VertexCenter, BondCenter, PlaquetteCenter, CellCenter
 export element_type
+export num_elements, elements, element_position, element_positions
 
 # ---- Site types ----
 export AbstractSiteType
