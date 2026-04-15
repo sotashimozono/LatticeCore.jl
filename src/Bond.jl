@@ -67,3 +67,38 @@ function neighbor_bonds(lat::AbstractLattice{D,T}, i::Int) where {D,T}
         j in neighbors(lat, i)
     )
 end
+
+# ---- Generic element-center accessors --------------------------------
+#
+# These methods present a uniform API for "ask the lattice about its
+# elements of centring X" without having to remember whether the
+# concept is sites, bonds, plaquettes, or cells. Concrete lattices may
+# specialise any of them for efficiency or to support `PlaquetteCenter`
+# / `CellCenter`. The function declarations live in `LatticeElement.jl`;
+# the methods need both `AbstractLattice` and `Bond` so they live here.
+
+# num_elements ---------------------------------------------------------
+
+num_elements(lat::AbstractLattice, ::VertexCenter) = num_sites(lat)
+function num_elements(lat::AbstractLattice, ::BondCenter)
+    return count(_ -> true, bonds(lat))
+end
+
+# elements -------------------------------------------------------------
+
+elements(lat::AbstractLattice, ::VertexCenter) = 1:num_sites(lat)
+elements(lat::AbstractLattice, ::BondCenter) = bonds(lat)
+
+# element_position -----------------------------------------------------
+
+element_position(lat::AbstractLattice, ::VertexCenter, i::Int) = position(lat, i)
+function element_position(lat::AbstractLattice, ::BondCenter, i::Int)
+    bs = collect(bonds(lat))
+    return bond_center(lat, bs[i])
+end
+
+# element_positions ----------------------------------------------------
+
+function element_positions(lat::AbstractLattice, e::AbstractLatticeElement)
+    return (element_position(lat, e, i) for i in 1:num_elements(lat, e))
+end
