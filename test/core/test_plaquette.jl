@@ -9,28 +9,40 @@ using Test
 struct TinySquareLattice <: AbstractLattice{2,Float64} end
 
 LatticeCore.num_sites(::TinySquareLattice) = 4
-LatticeCore.position(::TinySquareLattice, i::Int) =
-    ((i == 1) ? SVector(0.0, 0.0) :
-     (i == 2) ? SVector(1.0, 0.0) :
-     (i == 3) ? SVector(0.0, 1.0) :
-                SVector(1.0, 1.0))
-LatticeCore.neighbors(::TinySquareLattice, i::Int) =
-    i == 1 ? [2, 3] :
-    i == 2 ? [1, 4] :
-    i == 3 ? [1, 4] :
-             [2, 3]
+function LatticeCore.position(::TinySquareLattice, i::Int)
+    (
+        if (i == 1)
+            SVector(0.0, 0.0)
+        elseif (i == 2)
+            SVector(1.0, 0.0)
+        elseif (i == 3)
+            SVector(0.0, 1.0)
+        else
+            SVector(1.0, 1.0)
+        end
+    )
+end
+function LatticeCore.neighbors(::TinySquareLattice, i::Int)
+    if i == 1
+        [2, 3]
+    elseif i == 2
+        [1, 4]
+    elseif i == 3
+        [1, 4]
+    else
+        [2, 3]
+    end
+end
 LatticeCore.boundary(::TinySquareLattice) = nothing
 LatticeCore.size_trait(::TinySquareLattice) = FiniteSize((2, 2))
 
 # One square plaquette covering all four sites, cyclic order 1→2→4→3.
-LatticeCore.plaquettes(::TinySquareLattice) = (
-    Plaquette{2,Float64}([1, 2, 4, 3], SVector(0.5, 0.5), :square),
-)
+function LatticeCore.plaquettes(::TinySquareLattice)
+    (Plaquette{2,Float64}([1, 2, 4, 3], SVector(0.5, 0.5), :square),)
+end
 
 @testset "PlaquetteRule and Plaquette types" begin
-    rule = PlaquetteRule(
-        [(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)], :square
-    )
+    rule = PlaquetteRule([(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)], :square)
     @test rule.corners[1] == (1, 0, 0)
     @test rule.type === :square
     @test length(rule.corners) == 4
