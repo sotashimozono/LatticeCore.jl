@@ -25,9 +25,17 @@ end
 Geometric center (midpoint) of the bond in real space. Useful for
 bond-centered observables and for position-dependent bond modifiers
 such as sine-square deformation.
+
+Uses the bond's stored displacement `bond.vector` rather than the
+literal positions of `bond.i` and `bond.j`. This matters under
+periodic boundary conditions: the wrapped target's `position(j)` is
+on the opposite side of the sample, so `(position(i) + position(j))/2`
+would point to the sample interior instead of just outside the
+boundary. The bond carries the unwrapped displacement, so
+`position(i) + bond.vector / 2` gives the true geometric midpoint.
 """
 function bond_center(lat::AbstractLattice{D,T}, bond::Bond{D,T}) where {D,T}
-    return (position(lat, bond.i) + position(lat, bond.j)) / 2
+    return position(lat, bond.i) + bond.vector / 2
 end
 
 """
