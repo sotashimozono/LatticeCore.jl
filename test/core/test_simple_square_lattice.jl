@@ -129,6 +129,23 @@ using Test
         @test bond_center(lat, b) == SVector(1.5, 1.0)
     end
 
+    @testset "bond_center handles PBC-wrapped bonds" begin
+        # On a 4×4 fully periodic sample, the corner site (x=1, y=1) has
+        # a neighbour that wraps left to (x=4, y=1). The bond's stored
+        # displacement vector is (-1, 0); the geometric midpoint sits
+        # half a step LEFT of (1, 1) — i.e. (0.5, 1.0) — not at the
+        # arithmetic mean of the literal positions, which would land
+        # inside the sample interior at (2.5, 1.0).
+        lat = SimpleSquareLattice(4, 4, PeriodicAxis())
+        wrapped = Bond{2,Float64}(1, 4, SVector(-1.0, 0.0), :nearest)
+        @test bond_center(lat, wrapped) == SVector(0.5, 1.0)
+
+        # Sanity check on an interior bond — the new and old formulas
+        # agree there.
+        interior = Bond{2,Float64}(6, 7, SVector(1.0, 0.0), :nearest)
+        @test bond_center(lat, interior) == SVector(2.5, 2.0)
+    end
+
     @testset "coordinate conversions" begin
         lat = SimpleSquareLattice(3, 3, PeriodicAxis())
 
