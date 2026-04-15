@@ -14,6 +14,7 @@ include("SiteType.jl")
 include("SiteLayout.jl")
 include("AbstractLattice.jl")
 include("Bond.jl")
+include("Plaquette.jl")
 include("BoundaryCondition.jl")
 include("Coordinate.jl")
 include("Indexing.jl")
@@ -33,6 +34,11 @@ export site_layout, site_type, num_sublattices, sublattice
 export AbstractLatticeElement, VertexCenter, BondCenter, PlaquetteCenter, CellCenter
 export element_type
 export num_elements, elements, element_position, element_positions
+export element_neighbors, incident
+
+# ---- Plaquettes ----
+export PlaquetteRule, Plaquette
+export plaquettes, neighbor_plaquettes, plaquette_center
 
 # ---- Site types ----
 export AbstractSiteType
