@@ -1,6 +1,14 @@
 ENV["GKSwstype"] = "100"
 
 using LatticeCore, Test
+
+# Eagerly load the optional weak-dependency packages so the
+# `LatticeCoreFFTWExt`, `LatticeCoreNFFTExt`, and `LatticeCorePlotsExt`
+# extensions are active for the whole test run.
+using FFTW
+using NFFT
+using Plots
+
 const dirs = ["core"]
 
 const FIG_BASE = joinpath(pkgdir(LatticeCore), "docs", "src", "assets")

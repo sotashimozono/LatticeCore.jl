@@ -44,10 +44,13 @@ dependency.
   without a breaking rewrite.
 - **Momentum-space layer**: `AbstractMomentumLattice`,
   `PeriodicMomentumLattice`, `monkhorst_pack` / `gamma_centered`
-  mesh constructors, and a naive `structure_factor`. Type
-  skeletons (`HyperReciprocalLattice`, `BraggPeakSet`,
-  `AcceptanceWindow`) for downstream quasicrystal Fourier
-  analysis.
+  mesh constructors, and `structure_factor` with trait-dispatched
+  fast paths — `LatticeCoreFFTWExt` runs an O(N log N) FFT on
+  Bravais lattices when `using FFTW`, and `LatticeCoreNFFTExt`
+  reserves the NUFFT entry point for the quasicrystal case
+  (issue #28). Type skeletons (`HyperReciprocalLattice`,
+  `BraggPeakSet`, `AcceptanceWindow`) for downstream quasicrystal
+  Fourier analysis.
 - **Lazy / infinite lattice hooks**: `materialize(abstract; cutoff)`
   for the infinite-abstract → finite-materialisation pattern, and
   `require_finite(lat)` for Monte Carlo entry-point guards.

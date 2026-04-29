@@ -66,4 +66,64 @@ using Test
         # k = 0: all phases are 1 → |N|² / N = N
         @test structure_factor(lat, state, SVector(0.0)) ≈ Float64(num_sites(lat))
     end
+
+    # ---- FFT fast path (Bravais, HasReciprocal) ---------------------
+    #
+    # `LatticeCoreFFTWExt` is loaded eagerly in `test/runtests.jl`, so
+    # `structure_factor(lat, state, ml)` should hit the FFT path on
+    # `SimpleSquareLattice` / `LineLattice`. The result must match the
+    # naive double loop (modulo FP noise).
+
+    @testset "FFT path matches naive on SimpleSquareLattice (MP mesh)" begin
+        for (Lx, Ly) in ((4, 4), (6, 4), (8, 8))
+            lat = SimpleSquareLattice(Lx, Ly, PeriodicAxis())
+            ml = reciprocal_lattice(lat)
+            for trial in 1:3
+                state = randn(num_sites(lat))
+                fast = structure_factor(lat, state, ml)
+                slow = LatticeCore._structure_factor_naive(lat, state, ml)
+                @test fast ≈ slow rtol = 1e-9
+            end
+        end
+    end
+
+    @testset "FFT path matches naive on LineLattice (MP mesh)" begin
+        for N in (4, 6, 16, 32)
+            lat = LineLattice(N, PeriodicAxis())
+            for trial in 1:3
+                state = randn(num_sites(lat))
+                ml = reciprocal_lattice(lat)
+                fast = structure_factor(lat, state, ml)
+                slow = LatticeCore._structure_factor_naive(lat, state, ml)
+                @test fast ≈ slow rtol = 1e-9
+            end
+        end
+    end
+
+    @testset "FFT path matches naive on a Γ-centred mesh" begin
+        # `gamma_centered` uses zero offset, exercising the
+        # no-prephase branch in the FFT extension.
+        lat = SimpleSquareLattice(4, 4, PeriodicAxis())
+        A = LatticeCore.basis_vectors(lat)
+        B = SMatrix{2,2,Float64}(2π * inv(transpose(A)))
+        ml = LatticeCore.gamma_centered(B, (lat.Lx, lat.Ly))
+        state = randn(num_sites(lat))
+        fast = structure_factor(lat, state, ml)
+        slow = LatticeCore._structure_factor_naive(lat, state, ml)
+        @test fast ≈ slow rtol = 1e-9
+    end
+
+    @testset "FFT path falls back to naive when mesh ≠ lattice dims" begin
+        lat = SimpleSquareLattice(4, 4, PeriodicAxis())
+        # A coarser MP mesh — extension should detect the mismatch and
+        # fall back to the naive helper.
+        A = LatticeCore.basis_vectors(lat)
+        B = SMatrix{2,2,Float64}(2π * inv(transpose(A)))
+        ml_coarse = LatticeCore.monkhorst_pack(B, (2, 2))
+        state = randn(num_sites(lat))
+        out = structure_factor(lat, state, ml_coarse)
+        slow = LatticeCore._structure_factor_naive(lat, state, ml_coarse)
+        @test out ≈ slow rtol = 1e-12
+        @test length(out) == 4
+    end
 end
