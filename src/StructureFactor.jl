@@ -72,3 +72,62 @@ function _structure_factor_naive(
     end
     return out
 end
+
+# ---- FFT fast-path opt-in hooks --------------------------------------
+#
+# These two helpers describe a Bravais lattice's "natural grid layout":
+# whether `state[i]` can be reshaped onto a regular `D`-dimensional
+# mesh that lines up with the lattice's site index ordering. They are
+# defined here (rather than inside `LatticeCoreFFTWExt`) so that
+# downstream packages — `Lattice2D`, `QuasiCrystal`, custom lattices —
+# can opt their own lattices into the FFT fast path **without depending
+# on FFTW**:
+#
+# ```julia
+# # In a downstream package, after `using LatticeCore`:
+# struct MyLattice <: AbstractLattice{2,Float64} ... end
+# LatticeCore._has_known_grid(::MyLattice) = true
+# LatticeCore._reshape_state(::MyLattice, state, dims) = reshape(state, dims)
+# ```
+#
+# When `LatticeCoreFFTWExt` is loaded (`using FFTW`), it dispatches
+# through these names; when it isn't, the hooks simply have no effect.
+# The defaults are deliberately conservative: an unknown lattice is not
+# eligible, and `_reshape_state` errors if called without an opt-in
+# (the FFT extension only reaches it after `_has_known_grid` returns
+# `true`, so the error path is purely defensive).
+
+"""
+    LatticeCore._has_known_grid(lat::AbstractLattice) → Bool
+
+Whether the lattice has a known, FFT-compatible grid layout that
+matches a `PeriodicMomentumLattice` mesh of the same `dims`.
+
+Default: `false`. Concrete lattices opt in by adding a method that
+returns `true`, paired with a [`_reshape_state`](@ref
+LatticeCore._reshape_state) method that produces the corresponding
+`D`-dimensional grid view.
+
+The FFT fast path in `LatticeCoreFFTWExt` only fires when this
+returns `true`; lattices without an opt-in stay on the naive helper.
+"""
+_has_known_grid(::AbstractLattice) = false
+
+"""
+    LatticeCore._reshape_state(lat, state, dims) → AbstractArray
+
+Reshape a per-site `state::AbstractVector` into the lattice's
+natural `D`-dimensional grid of size `dims`, so that the FFT
+extension can take a single `fft` over the result.
+
+Default: throws — concrete lattices that opt into
+[`_has_known_grid`](@ref LatticeCore._has_known_grid) must also
+provide a method here.
+"""
+function _reshape_state(lat::AbstractLattice, state, dims)
+    error(
+        "LatticeCore._reshape_state not defined for $(typeof(lat)); ",
+        "opt in by defining `LatticeCore._reshape_state(::MyLattice, state, dims)` ",
+        "alongside `LatticeCore._has_known_grid(::MyLattice) = true`.",
+    )
+end

@@ -212,3 +212,14 @@ function reciprocal_lattice(lat::SimpleSquareLattice{T}) where {T}
     B = SMatrix{2,2,T}(T(2π) * inv(transpose(A)))
     return monkhorst_pack(B, (lat.Lx, lat.Ly))
 end
+
+# ---- FFT fast-path opt-in (see `src/StructureFactor.jl`) -------------
+#
+# `SimpleSquareLattice` uses row-major site indexing:
+# `site_index(x, y) = (y - 1) * Lx + x`. Julia's column-major reshape
+# over `(Lx, Ly)` yields `M[x, y] = state[(y - 1) * Lx + x]`, which
+# lines up with the natural grid (x along axis 1, y along axis 2).
+# Registered here so `Lattice2D` / downstream code can rely on the
+# opt-in without depending on FFTW.
+_has_known_grid(::SimpleSquareLattice) = true
+_reshape_state(::SimpleSquareLattice, state, dims) = reshape(state, dims)
