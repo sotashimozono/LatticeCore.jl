@@ -196,6 +196,15 @@ work because `SVector` supports tuple-style destructuring.
 Concrete lattices may override any pair for O(1) access — the default
 implementations here are O(num_elements) materialisations meant for
 correctness, not hot-path use.
+
+# Indexing convention
+
+Both the input index `i` (for centring `from`) and the integer indices
+in the returned vector (for centring `to`) follow the enumeration
+order of `1:num_sites(lat)` / `enumerate(bonds(lat))` /
+`enumerate(plaquettes(lat))` — same convention as
+[`element_position`](@ref). Indices are lattice-specific and not
+portable across lattice instances.
 """
 function incident end
 
