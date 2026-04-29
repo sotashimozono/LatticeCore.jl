@@ -93,8 +93,20 @@ elements(lat::AbstractLattice, ::BondCenter) = bonds(lat)
 
 element_position(lat::AbstractLattice, ::VertexCenter, i::Int) = position(lat, i)
 function element_position(lat::AbstractLattice, ::BondCenter, i::Int)
-    bs = collect(bonds(lat))
-    return bond_center(lat, bs[i])
+    return bond_center(lat, _nth(bonds(lat), i))
+end
+
+# Internal: fetch the i-th element of an iterator without collecting.
+# Used by generic element_position / incident defaults so we avoid
+# materialising the full bond/plaquette iterator just to index once.
+function _nth(itr, i::Int)
+    i >= 1 || throw(BoundsError(itr, i))
+    k = 0
+    for x in itr
+        k += 1
+        k == i && return x
+    end
+    throw(BoundsError(itr, i))
 end
 
 # element_positions ----------------------------------------------------
