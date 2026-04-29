@@ -54,14 +54,30 @@ function plot_sites! end
 
 """
     diffraction_pattern(ml::AbstractMomentumLattice; kwargs...)
+    diffraction_pattern(lat::AbstractLattice, state, ml::AbstractMomentumLattice; kwargs...)
 
-Visualise the Fourier-space "diffraction pattern" of a momentum
-lattice. Concrete methods live in the Plots extension and dispatch
-on the physical dimension of the momentum lattice:
+Visualise the Fourier-space "diffraction pattern". Two argument
+shapes are supported:
+
+1. **Pre-computed peaks.** Pass an
+   [`AbstractMomentumLattice`](@ref) (typically a
+   [`BraggPeakSet`](@ref) from `QuasiCrystal.jl`) — intensities are
+   read directly from the momentum-lattice object.
+
+2. **From a state on a real-space lattice.** Pass a real-space
+   `lat` together with a `state` vector and a momentum-lattice
+   `ml` describing the q-grid; intensities are computed from
+   `S(q) = (1/N) |Σ_i s_i e^{-i q · r_i}|²` via
+   [`structure_factor`](@ref). The fast paths from
+   `LatticeCoreFFTWExt` / `LatticeCoreNFFTExt` are used when the
+   matching extension is loaded.
+
+Concrete methods live in the Plots extension and dispatch on
+`dimension(ml)`:
 
 - `DPhys = 1` → stem plot of `intensity(k)` vs `k`
-- `DPhys = 2` → scatter of peak positions in `(kₓ, k_y)` with
-  marker size (and colour) proportional to intensity
+- `DPhys = 2` → heatmap (regular meshes from `(lat, state, ml)`) or
+  scatter (irregular peak sets) of `intensity(kₓ, k_y)`
 
 Typical usage on a quasicrystal:
 
@@ -72,12 +88,23 @@ peaks = bragg_peaks(qc; kmax = 20.0, intensity_cutoff = 1e-3)
 diffraction_pattern(peaks)
 ```
 
+Typical usage on a finite Bravais lattice with a snapshot:
+
+```julia
+using Plots, LatticeCore
+lat = SimpleSquareLattice(8, 8, PeriodicAxis())
+state = ones(Int8, num_sites(lat))
+diffraction_pattern(lat, state, reciprocal_lattice(lat))
+```
+
 # Common keyword arguments
 
 - `title` — plot title (default: "Diffraction pattern")
+- `intensity::Symbol` — `:|S|²` (default) or `:S`. Selects between
+  the squared modulus (intensity) and the raw structure factor.
 - `marker_scale::Real` — multiplier applied to marker size in 2D
-  (default picks something reasonable; tune for your cutoff)
-- `color` — `Plots.jl` colour value or gradient for 2D scatter
+  scatter (default picks something reasonable; tune for your cutoff)
+- `color` — `Plots.jl` colour value or gradient for 2D scatter / heatmap
 - `log_intensity::Bool` — if `true`, plot `log10(I/I_max)` instead
   of `I`. Makes weaker peaks visible alongside Γ.
 - Any other keyword is forwarded to the underlying `Plots.plot`.

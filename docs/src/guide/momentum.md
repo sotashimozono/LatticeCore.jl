@@ -108,9 +108,18 @@ S(\mathbf{k}) = \frac{1}{N}\,
     \left| \sum_i s_i \, e^{-i \mathbf{k} \cdot \mathbf{r}_i} \right|^2
 ```
 
-for a scalar configuration `state`. The implementation is naive
-O(N) per k-point; FFT-based specialisations can be added later
-without changing the API.
+for a scalar configuration `state`. The default per-k-point
+implementation is naive O(N); when a whole momentum lattice is
+passed the call is dispatched on `reciprocal_support(lat)`:
+
+- `HasReciprocal()` (Bravais periodic): the FFT extension
+  `LatticeCoreFFTWExt` (loaded automatically by `using FFTW`)
+  takes the O(N log N) path on regular meshes whose dims match
+  the lattice grid, falling back to naive otherwise.
+- `HasFourierModule()` (cut-and-project quasicrystals): the
+  `LatticeCoreNFFTExt` extension reserves a NUFFT entry point
+  (issue #28); for now it returns the naive result.
+- otherwise: naive.
 
 Three canonical checks:
 

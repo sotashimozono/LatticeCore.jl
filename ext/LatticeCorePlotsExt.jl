@@ -3,6 +3,7 @@ module LatticeCorePlotsExt
 using LatticeCore
 using LinearAlgebra
 using Plots
+using StaticArrays
 
 # ---- Common helpers --------------------------------------------------
 
@@ -234,6 +235,131 @@ function LatticeCore.diffraction_pattern(
         kwargs...,
     )
     return p
+end
+
+# ---- diffraction_pattern from (lat, state, q_grid) ------------------
+#
+# Issue #27: the form `diffraction_pattern(lat, state, q_grid)` runs
+# `structure_factor` on the supplied grid (so the FFT / NUFFT fast
+# paths kick in transparently when the matching extension is loaded)
+# and renders the result. For 2D regular meshes we draw a heatmap on
+# the natural rectangular grid; otherwise we delegate to the existing
+# scatter / stem methods.
+
+function _select_intensity(Sks, intensity::Symbol)
+    if intensity === :S
+        return Sks
+    elseif intensity === Symbol("|S|²") || intensity === :Smag2 || intensity === :intensity
+        return Sks  # `structure_factor` already returns |S|² / N
+    else
+        throw(ArgumentError("intensity must be one of (:|S|², :S); got $(intensity)"))
+    end
+end
+
+# 1D → stem plot of S(k) vs k.
+function LatticeCore.diffraction_pattern(
+    lat::LatticeCore.AbstractLattice,
+    state::AbstractVector,
+    ml::LatticeCore.AbstractMomentumLattice{1,T};
+    title="Diffraction pattern",
+    intensity::Symbol=Symbol("|S|²"),
+    log_intensity::Bool=false,
+    color=:steelblue,
+    lw=1.5,
+    ms=4,
+    kwargs...,
+) where {T}
+    Sks = _select_intensity(structure_factor(lat, state, ml), intensity)
+    M = num_k_points(ml)
+    xs = [Float64(k_point(ml, i)[1]) for i in 1:M]
+    ys = _intensity_for_plot(Sks, log_intensity)
+
+    p = Plots.plot(;
+        xlabel="k",
+        ylabel=log_intensity ? "log₁₀(I / I_max)" : "I(k)",
+        title=title,
+        legend=false,
+        kwargs...,
+    )
+    seg_x = Float64[]
+    seg_y = Float64[]
+    base = log_intensity ? minimum(ys) : 0.0
+    perm = sortperm(xs)
+    for j in perm
+        push!(seg_x, xs[j], xs[j], NaN)
+        push!(seg_y, base, ys[j], NaN)
+    end
+    Plots.plot!(p, seg_x, seg_y; color=color, lw=lw, label="")
+    Plots.scatter!(p, xs[perm], ys[perm]; mc=color, ms=ms, markerstrokewidth=0, label="")
+    return p
+end
+
+# 2D regular mesh → heatmap. We use the mesh dims to reshape the flat
+# `structure_factor` output back into a (Nx, Ny) grid; the kx / ky
+# axes are the unique values on each axis.
+function LatticeCore.diffraction_pattern(
+    lat::LatticeCore.AbstractLattice,
+    state::AbstractVector,
+    ml::LatticeCore.PeriodicMomentumLattice{2,T};
+    title="Diffraction pattern",
+    intensity::Symbol=Symbol("|S|²"),
+    log_intensity::Bool=false,
+    color=:viridis,
+    kwargs...,
+) where {T}
+    Sks = _select_intensity(structure_factor(lat, state, ml), intensity)
+    Nx, Ny = ml.mesh
+
+    # `gamma_centered` and `monkhorst_pack` enumerate k-points via
+    # `CartesianIndices(mesh)` in column-major order, so reshape lines
+    # the values up with (kx, ky) on a Cartesian grid.
+    grid = reshape(_intensity_for_plot(Sks, log_intensity), Nx, Ny)
+    kxs = [Float64(k_point(ml, i)[1]) for i in 1:Nx]
+    kys = [Float64(k_point(ml, (j - 1) * Nx + 1)[2]) for j in 1:Ny]
+
+    return Plots.heatmap(
+        kxs,
+        kys,
+        permutedims(grid);  # heatmap wants (Ny, Nx) → rows are y
+        aspect_ratio=:equal,
+        xlabel="kₓ",
+        ylabel="k_y",
+        title=title,
+        color=color,
+        colorbar_title=log_intensity ? "log₁₀(I / I_max)" : "I(k)",
+        kwargs...,
+    )
+end
+
+# 2D irregular momentum lattice (e.g. BraggPeakSet) → reuse the scatter
+# method on a freshly-built BraggPeakSet of computed intensities.
+function LatticeCore.diffraction_pattern(
+    lat::LatticeCore.AbstractLattice,
+    state::AbstractVector,
+    ml::LatticeCore.AbstractMomentumLattice{2,T};
+    title="Diffraction pattern",
+    intensity::Symbol=Symbol("|S|²"),
+    log_intensity::Bool=false,
+    marker_scale::Real=12.0,
+    color=:viridis,
+    kwargs...,
+) where {T}
+    Sks = Float64.(_select_intensity(structure_factor(lat, state, ml), intensity))
+    M = num_k_points(ml)
+    ks = [k_point(ml, i) for i in 1:M]
+    bps = LatticeCore.BraggPeakSet{2,2,Float64}(
+        [SVector{2,Float64}(Float64(k[1]), Float64(k[2])) for k in ks],
+        Sks,
+        [(0, 0) for _ in 1:M],
+    )
+    return LatticeCore.diffraction_pattern(
+        bps;
+        title=title,
+        log_intensity=log_intensity,
+        marker_scale=marker_scale,
+        color=color,
+        kwargs...,
+    )
 end
 
 end # module LatticeCorePlotsExt
