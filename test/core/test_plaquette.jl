@@ -107,8 +107,13 @@ end
 
     @testset "BondCenter → VertexCenter: endpoints" begin
         for k in 1:length(bs)
-            @test Set(incident(lat, BondCenter(), VertexCenter(), k)) ==
-                Set([bs[k].i, bs[k].j])
+            inc = incident(lat, BondCenter(), VertexCenter(), k)
+            # Static cardinality (2) → SVector{2,Int}, no heap allocation.
+            @test inc isa SVector{2,Int}
+            @test Set(inc) == Set([bs[k].i, bs[k].j])
+            # Tuple-style destructuring must keep working.
+            a, b = inc
+            @test Set((a, b)) == Set([bs[k].i, bs[k].j])
         end
     end
 
