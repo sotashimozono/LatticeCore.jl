@@ -67,6 +67,20 @@ Abstract supertype for boundary modifiers. A modifier does not change
 which bonds exist — it only reweights existing bonds through
 [`bond_weight`](@ref). Examples: [`NoModifier`](@ref),
 [`SSD`](@ref).
+
+# Extending
+
+Downstream packages may define their own modifier types by
+subtyping `AbstractBoundaryModifier` and overloading
+
+    bond_weight(::MyModifier, lat::AbstractLattice, i::Int, j::Int)::Float64
+
+The two-argument default `bond_weight(modifier, lat)` may also be
+overloaded if a modifier wants to broadcast a single scalar over
+the whole lattice. `AbstractBoundaryModifier` and the concrete
+[`NoModifier`](@ref) / [`SSD`](@ref) types are part of the public
+exported API of `LatticeCore` precisely so downstream code can
+extend them.
 """
 abstract type AbstractBoundaryModifier end
 
@@ -80,6 +94,11 @@ Sine-square deformation modifier. `L` is the characteristic scale
 used by the envelope `sin²(π · x/L)`. The concrete weight implementation
 will land with the MC layer; for now this serves as a placeholder
 carrying the scale parameter.
+
+`SSD` is exported so downstream MC / TN packages can construct
+boundaries with SSD weighting and dispatch on the type. Custom
+deformations should subtype [`AbstractBoundaryModifier`](@ref)
+rather than re-using `SSD`.
 """
 struct SSD{T<:Real} <: AbstractBoundaryModifier
     L::T

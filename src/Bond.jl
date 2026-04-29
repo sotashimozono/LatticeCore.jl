@@ -81,8 +81,23 @@ end
 
 num_elements(lat::AbstractLattice, ::VertexCenter) = num_sites(lat)
 function num_elements(lat::AbstractLattice, ::BondCenter)
-    return count(_ -> true, bonds(lat))
+    return _iter_length(bonds(lat))
 end
+
+# Internal: O(1) length when the iterator declares one, otherwise a
+# single counting pass. This avoids `count(_ -> true, …)` walking the
+# iterator a second time when concrete lattices already know the size
+# (e.g. via a `Vector{Bond}` override of `bonds(lat)`). Concrete
+# lattices retain the option to override `num_elements(lat, …)`
+# directly with an O(1) closed-form.
+function _iter_length(itr)
+    return _iter_length(itr, Base.IteratorSize(itr))
+end
+_iter_length(itr, ::Base.HasLength) = length(itr)
+_iter_length(itr, ::Base.HasShape) = length(itr)
+_iter_length(itr, ::Base.SizeUnknown) = count(_ -> true, itr)
+_iter_length(itr, ::Base.IsInfinite) =
+    throw(ArgumentError("cannot take length of infinite iterator"))
 
 # elements -------------------------------------------------------------
 

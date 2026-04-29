@@ -92,7 +92,7 @@ plaquette_center(p::Plaquette) = p.center
 # Default: count via the plaquettes iterator. Concrete lattices may
 # override with an O(1) cell×kind formula.
 function num_elements(lat::AbstractLattice, ::PlaquetteCenter)
-    return count(_ -> true, plaquettes(lat))
+    return _iter_length(plaquettes(lat))
 end
 
 # Default: return the iterator as-is.
