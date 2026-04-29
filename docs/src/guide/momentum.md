@@ -121,6 +121,34 @@ passed the call is dispatched on `reciprocal_support(lat)`:
   (issue #28); for now it returns the naive result.
 - otherwise: naive.
 
+### Opting a custom lattice into the FFT fast path
+
+The grid-layout hooks the FFT extension dispatches on live on
+`LatticeCore` itself, so downstream packages can register their
+own Bravais lattices without depending on FFTW. Add two
+methods next to the lattice definition:
+
+```julia
+using LatticeCore
+
+struct MyLattice <: AbstractLattice{2,Float64}
+    Lx::Int
+    Ly::Int
+    # ...
+end
+
+# Tell LatticeCore that `state[i]` reshapes onto the natural
+# `(Lx, Ly)` grid (e.g. via `site_index(x, y) = (y - 1) * Lx + x`):
+LatticeCore._has_known_grid(::MyLattice) = true
+LatticeCore._reshape_state(::MyLattice, state, dims) = reshape(state, dims)
+```
+
+With those two lines in place, `structure_factor(lat, state, ml)`
+will use the FFT path whenever `ml::PeriodicMomentumLattice`
+matches the lattice dims and `using FFTW` has been issued; if
+the user hasn't loaded FFTW the call still works — it just stays
+on the naive helper.
+
 Three canonical checks:
 
 ### Ferromagnet: S(0) = N

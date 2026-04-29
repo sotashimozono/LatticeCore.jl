@@ -48,6 +48,11 @@ end
 # - ml is a PeriodicMomentumLattice (regular k-grid)
 # - lat is a finite Bravais lattice with grid dims matching ml.mesh
 # - lat is one of the lattices for which we know the natural grid layout
+#
+# The grid-layout opt-in lives on `LatticeCore` itself
+# (`_has_known_grid` / `_reshape_state`) so downstream packages such as
+# `Lattice2D` and `QuasiCrystal` can register their lattices on the
+# fast path without taking an FFTW dependency.
 function _fft_eligible(
     lat::LatticeCore.AbstractLattice, ml::LatticeCore.AbstractMomentumLattice
 )
@@ -56,25 +61,8 @@ function _fft_eligible(
     st = LatticeCore.size_trait(lat)
     st isa LatticeCore.FiniteSize || return false
     st.dims == ml.mesh || return false
-    return _has_known_grid(lat)
+    return LatticeCore._has_known_grid(lat)
 end
-
-# Default: unknown grid layout. Concrete lattices must opt in.
-_has_known_grid(::LatticeCore.AbstractLattice) = false
-_has_known_grid(::LatticeCore.LineLattice) = true
-_has_known_grid(::LatticeCore.SimpleSquareLattice) = true
-
-# ---- Reshape state into the lattice's natural grid --------------------
-
-# `LineLattice`: site i ↔ position i, so `state[i]` lays out as a 1D
-# grid of length N directly.
-_reshape_state(::LatticeCore.LineLattice, state, dims) = reshape(state, dims)
-
-# `SimpleSquareLattice` uses row-major site indexing:
-# site_index(x, y) = (y - 1) * Lx + x. Julia's column-major reshape
-# over (Lx, Ly) yields M[x, y] = state[(y - 1) * Lx + x], which lines
-# up with the natural grid (x along axis 1, y along axis 2).
-_reshape_state(::LatticeCore.SimpleSquareLattice, state, dims) = reshape(state, dims)
 
 # ---- FFT core --------------------------------------------------------
 
@@ -107,7 +95,7 @@ function _structure_factor_fft(
 ) where {D,T}
     dims = ml.mesh
     N = prod(dims)
-    grid = _reshape_state(lat, state, dims)
+    grid = LatticeCore._reshape_state(lat, state, dims)
 
     B = LatticeCore.reciprocal_basis(ml)
     # Fractional offset of the mesh (per axis, scaled by 1/N_d).
