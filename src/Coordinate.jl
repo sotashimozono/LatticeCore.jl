@@ -36,7 +36,10 @@ end
 
 # The `RealSpace(x::SVector{D, T})` outer constructor is auto-generated
 # by Julia from the inner; we only need an extra tuple-based overload.
-RealSpace(xs::NTuple{D,T}) where {D,T<:Real} = RealSpace(SVector(xs))
+# We spell the tuple as `Tuple{T, Vararg{T}}` rather than `NTuple{D, T}`
+# so that `T` stays bound (an empty tuple `NTuple{0, T}` cannot pin `T`,
+# which Aqua.test_unbound_args correctly flags).
+RealSpace(xs::Tuple{T,Vararg{T}}) where {T<:Real} = RealSpace(SVector(xs))
 
 # ---- LatticeCoord ----------------------------------------------------
 
