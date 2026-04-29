@@ -179,6 +179,20 @@ Same-centring pairs (`from == to`) fall through to
 [`element_neighbors`](@ref) so that `incident(lat, E(), E(), i)` is the
 adjacency under centring `E`.
 
+# Return type
+
+The result is always an `AbstractVector{Int}` (iterable, indexable,
+`length`-supporting). When the cardinality is statically known, an
+`SVector{N,Int}` is returned to avoid heap allocation:
+
+- `incident(lat, ::BondCenter, ::VertexCenter, i)` → `SVector{2,Int}`
+  (a bond always has exactly 2 endpoints).
+
+Otherwise (variable plaquette size, dynamic adjacency, etc.) a
+`Vector{Int}` is returned. Callers that previously did
+`a, b = incident(lat, BondCenter(), VertexCenter(), k)` continue to
+work because `SVector` supports tuple-style destructuring.
+
 Concrete lattices may override any pair for O(1) access — the default
 implementations here are O(num_elements) materialisations meant for
 correctness, not hot-path use.
@@ -198,10 +212,13 @@ function incident(lat::AbstractLattice, ::VertexCenter, ::BondCenter, i::Int)
     return [k for (k, b) in enumerate(bonds(lat)) if b.i == i || b.j == i]
 end
 
-# Bond → Vertex: endpoints of bond i
+# Bond → Vertex: endpoints of bond i.
+# Cardinality is statically 2, so we return an `SVector{2,Int}` to avoid
+# the heap allocation a 2-element `Vector{Int}` would incur. The result
+# is still an `AbstractVector{Int}` and supports tuple destructuring.
 function incident(lat::AbstractLattice, ::BondCenter, ::VertexCenter, i::Int)
     b = _nth(bonds(lat), i)
-    return [b.i, b.j]
+    return SVector{2,Int}(b.i, b.j)
 end
 
 # Vertex → Plaquette: plaquettes containing site i
