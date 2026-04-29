@@ -96,8 +96,9 @@ end
 _iter_length(itr, ::Base.HasLength) = length(itr)
 _iter_length(itr, ::Base.HasShape) = length(itr)
 _iter_length(itr, ::Base.SizeUnknown) = count(_ -> true, itr)
-_iter_length(itr, ::Base.IsInfinite) =
+function _iter_length(itr, ::Base.IsInfinite)
     throw(ArgumentError("cannot take length of infinite iterator"))
+end
 
 # elements -------------------------------------------------------------
 
