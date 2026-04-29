@@ -101,8 +101,7 @@ elements(lat::AbstractLattice, ::PlaquetteCenter) = plaquettes(lat)
 # Default: materialise and index. O(num_plaquettes) per call; concrete
 # lattices may override for O(1).
 function element_position(lat::AbstractLattice, ::PlaquetteCenter, i::Int)
-    ps = collect(plaquettes(lat))
-    return ps[i].center
+    return _nth(plaquettes(lat), i).center
 end
 
 # ---- Same-centring adjacency (line graph / dual graph) --------------
@@ -126,11 +125,10 @@ function element_neighbors end
 element_neighbors(lat::AbstractLattice, ::VertexCenter, i::Int) = neighbors(lat, i)
 
 function element_neighbors(lat::AbstractLattice, ::BondCenter, i::Int)
-    bs = collect(bonds(lat))
-    b = bs[i]
+    b = _nth(bonds(lat), i)
     endpoints = (b.i, b.j)
     out = Int[]
-    for (k, other) in enumerate(bs)
+    for (k, other) in enumerate(bonds(lat))
         k == i && continue
         if other.i in endpoints || other.j in endpoints
             push!(out, k)
@@ -140,11 +138,10 @@ function element_neighbors(lat::AbstractLattice, ::BondCenter, i::Int)
 end
 
 function element_neighbors(lat::AbstractLattice, ::PlaquetteCenter, i::Int)
-    ps = collect(plaquettes(lat))
-    p = ps[i]
+    p = _nth(plaquettes(lat), i)
     p_edges = _boundary_edges(p)
     out = Int[]
-    for (k, other) in enumerate(ps)
+    for (k, other) in enumerate(plaquettes(lat))
         k == i && continue
         any_shared = false
         for e in p_edges
@@ -198,35 +195,34 @@ end
 
 # Vertex → Bond: bonds touching site i
 function incident(lat::AbstractLattice, ::VertexCenter, ::BondCenter, i::Int)
-    bs = collect(bonds(lat))
-    return [k for (k, b) in enumerate(bs) if b.i == i || b.j == i]
+    return [k for (k, b) in enumerate(bonds(lat)) if b.i == i || b.j == i]
 end
 
 # Bond → Vertex: endpoints of bond i
 function incident(lat::AbstractLattice, ::BondCenter, ::VertexCenter, i::Int)
-    b = collect(bonds(lat))[i]
+    b = _nth(bonds(lat), i)
     return [b.i, b.j]
 end
 
 # Vertex → Plaquette: plaquettes containing site i
 function incident(lat::AbstractLattice, ::VertexCenter, ::PlaquetteCenter, i::Int)
-    ps = collect(plaquettes(lat))
-    return [k for (k, p) in enumerate(ps) if i in p.vertices]
+    return [k for (k, p) in enumerate(plaquettes(lat)) if i in p.vertices]
 end
 
 # Plaquette → Vertex: boundary vertices of plaquette i (in cyclic order)
 function incident(lat::AbstractLattice, ::PlaquetteCenter, ::VertexCenter, i::Int)
-    return collect(plaquettes(lat))[i].vertices
+    return _nth(plaquettes(lat), i).vertices
 end
 
-# Bond → Plaquette: plaquettes whose boundary contains bond i
+# Bond → Plaquette: plaquettes whose boundary contains bond i.
+#
+# Iterator-based: walks `bonds(lat)` once to fetch the i-th bond, then
+# walks `plaquettes(lat)` once. No O(N²) materialisation.
 function incident(lat::AbstractLattice, ::BondCenter, ::PlaquetteCenter, i::Int)
-    bs = collect(bonds(lat))
-    b = bs[i]
+    b = _nth(bonds(lat), i)
     target = (b.i, b.j)
-    ps = collect(plaquettes(lat))
     out = Int[]
-    for (k, p) in enumerate(ps)
+    for (k, p) in enumerate(plaquettes(lat))
         for e in _boundary_edges(p)
             if e == target || e == reverse(target)
                 push!(out, k)
@@ -241,11 +237,10 @@ end
 # integer bond indices. Each boundary edge is matched against
 # `bonds(lat)` by endpoint set; unmatched edges are skipped.
 function incident(lat::AbstractLattice, ::PlaquetteCenter, ::BondCenter, i::Int)
-    p = collect(plaquettes(lat))[i]
-    bs = collect(bonds(lat))
+    p = _nth(plaquettes(lat), i)
     out = Int[]
     for e in _boundary_edges(p)
-        for (k, b) in enumerate(bs)
+        for (k, b) in enumerate(bonds(lat))
             if (b.i, b.j) == e || (b.j, b.i) == e
                 push!(out, k)
                 break
