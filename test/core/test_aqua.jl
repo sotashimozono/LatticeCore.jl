@@ -5,7 +5,7 @@ using Aqua
 @testset "Aqua" begin
     # Run all Aqua checks. We start with `test_all` and only carve out
     # checks individually if a false positive shows up.
-    Aqua.test_all(LatticeCore; ambiguities = false, persistent_tasks = false)
+    Aqua.test_all(LatticeCore; ambiguities=false, persistent_tasks=false)
 
     # `test_all` skips ambiguity checks above because Base/stdlib can
     # introduce method ambiguities outside our control. Restrict the

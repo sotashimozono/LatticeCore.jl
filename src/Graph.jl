@@ -51,8 +51,7 @@ A == transpose(A)                # true
 ```
 """
 function adjacency_matrix(lat::AbstractLattice; sparse::Bool=true)
-    is_finite(lat) ||
-        throw(ArgumentError("adjacency_matrix requires a finite lattice"))
+    is_finite(lat) || throw(ArgumentError("adjacency_matrix requires a finite lattice"))
     N = num_sites(lat)
     Is = Int[]
     Js = Int[]
@@ -122,8 +121,7 @@ d, p = shortest_path(lat, 1, 9)
 ```
 """
 function shortest_path(lat::AbstractLattice, src::Int, dst::Int)
-    is_finite(lat) ||
-        throw(ArgumentError("shortest_path requires a finite lattice"))
+    is_finite(lat) || throw(ArgumentError("shortest_path requires a finite lattice"))
     N = num_sites(lat)
     (1 <= src <= N) || throw(BoundsError(lat, src))
     (1 <= dst <= N) || throw(BoundsError(lat, dst))
@@ -188,8 +186,7 @@ length(connected_components(lat)) == 1
 ```
 """
 function connected_components(lat::AbstractLattice)
-    is_finite(lat) ||
-        throw(ArgumentError("connected_components requires a finite lattice"))
+    is_finite(lat) || throw(ArgumentError("connected_components requires a finite lattice"))
     N = num_sites(lat)
     visited = falses(N)
     comps = Vector{Vector{Int}}()
