@@ -142,6 +142,42 @@ end
     end
 end
 
+# ---- 3D RowMajor ------------------------------------------------------
+#
+# site_index(cx, cy, cz, s) =
+#     (((cz - 1) * Ly + (cy - 1)) * Lx + (cx - 1)) * nsub + s
+#
+# Convention: x is the fastest axis, then y, then z (slowest). This
+# matches the 2D RowMajor extension and is the natural ordering for
+# downstream consumers that treat a 3D lattice as a stack of
+# row-major 2D slices.
+
+@inline function site_index(
+    ::RowMajor, dims::NTuple{3,Int}, nsub::Int, coord::LatticeCoord{3}
+)
+    @inbounds begin
+        cx, cy, cz = coord.cell
+        s = coord.sublattice
+        Lx = dims[1]
+        Ly = dims[2]
+        return (((cz - 1) * Ly + (cy - 1)) * Lx + (cx - 1)) * nsub + s
+    end
+end
+
+@inline function lattice_coord(::RowMajor, dims::NTuple{3,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Lx = dims[1]
+        Ly = dims[2]
+        cx = c % Lx + 1
+        cyz = c ÷ Lx
+        cy = cyz % Ly + 1
+        cz = cyz ÷ Ly + 1
+        return LatticeCoord((cx, cy, cz), s)
+    end
+end
+
 # ---- 2D Snake ---------------------------------------------------------
 #
 # Row-major layout, but within each row the x-direction alternates:

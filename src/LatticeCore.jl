@@ -21,6 +21,7 @@ include("Indexing.jl")
 include("MomentumLattice.jl")
 include("StructureFactor.jl")
 include("LazyInfinite.jl")
+include("Graph.jl")
 include("Plot.jl")
 include("reference/LineLattice.jl")
 include("reference/SimpleSquareLattice.jl")
@@ -84,6 +85,9 @@ export AcceptanceWindow, HyperReciprocalLattice, BraggPeakSet
 
 # ---- Lazy / infinite ----
 export materialize, require_finite
+
+# ---- Graph operations ----
+export adjacency_matrix, shortest_path, connected_components
 
 # ---- Plotting (methods live in LatticeCorePlotsExt) ----
 export plot_lattice, plot_bonds!, plot_sites!
