@@ -15,8 +15,7 @@ LatticeCore.num_sites(d::DummyBravais) = num_sites(d.inner)
 LatticeCore.neighbors(d::DummyBravais, i::Int) = neighbors(d.inner, i)
 LatticeCore.boundary(d::DummyBravais) = boundary(d.inner)
 LatticeCore.size_trait(d::DummyBravais) = LatticeCore.size_trait(d.inner)
-LatticeCore.reciprocal_support(d::DummyBravais) =
-    LatticeCore.reciprocal_support(d.inner)
+LatticeCore.reciprocal_support(d::DummyBravais) = LatticeCore.reciprocal_support(d.inner)
 LatticeCore.site_layout(d::DummyBravais) = LatticeCore.site_layout(d.inner)
 
 @testset "structure_factor" begin
@@ -155,8 +154,7 @@ LatticeCore.site_layout(d::DummyBravais) = LatticeCore.site_layout(d.inner)
 
     @testset "downstream lattices can opt into the FFT fast path" begin
         # Reference lattices ship with the opt-in baked in.
-        @test LatticeCore._has_known_grid(SimpleSquareLattice(2, 2, PeriodicAxis())) ==
-            true
+        @test LatticeCore._has_known_grid(SimpleSquareLattice(2, 2, PeriodicAxis())) == true
         @test LatticeCore._has_known_grid(LineLattice(4, PeriodicAxis())) == true
 
         inner = SimpleSquareLattice(4, 4, PeriodicAxis())
@@ -185,8 +183,7 @@ LatticeCore.site_layout(d::DummyBravais) = LatticeCore.site_layout(d.inner)
         LatticeCore._reshape_state(::DummyBravais, s, dims) = reshape(s, dims)
 
         @test LatticeCore._has_known_grid(dlat) == true
-        @test LatticeCore._reshape_state(dlat, state, (4, 4)) isa
-            AbstractMatrix{Float64}
+        @test LatticeCore._reshape_state(dlat, state, (4, 4)) isa AbstractMatrix{Float64}
 
         out_opted_in = structure_factor(dlat, state, ml)
         @test out_opted_in ≈ baseline rtol = 1e-9
