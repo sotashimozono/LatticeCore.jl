@@ -147,9 +147,7 @@ end
 # Row-major layout, but within each row the x-direction alternates:
 # odd rows walk x = 1..Lx, even rows walk x = Lx..1.
 
-@inline function site_index(
-    ::Snake, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2}
-)
+@inline function site_index(::Snake, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2})
     @inbounds begin
         cx, cy = coord.cell
         s = coord.sublattice
