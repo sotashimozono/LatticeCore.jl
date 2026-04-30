@@ -161,9 +161,13 @@ axis-level BC with any modifier without touching the core code:
 LatticeBoundary((PeriodicAxis(), OpenAxis()), SSD(10.0))
 ```
 
-(The `SSD` weighting function itself is currently a type-level
-placeholder; the concrete envelope evaluation lands with the MC
-layer.)
+[`bond_weight(::SSD, lat, i, j)`](@ref bond_weight) evaluates the
+multi-axis envelope `∏_d sin²(π (c_d − 1/2) / L_d)` at each endpoint
+and averages, reading the per-axis lengths `L_d` from the lattice's
+[`size_trait`](@ref). The `L` field on `SSD(L)` is informational and
+not used by the canonical evaluation; downstream packages may
+override the method on a more specific lattice type to supply
+alternative scales.
 
 ## Finite-size scaling and BC choice
 
