@@ -206,3 +206,85 @@ end
         return LatticeCoord((cx, cy), s)
     end
 end
+
+# ---- 3D ColMajor ------------------------------------------------------
+#
+# site_index(cx, cy, cz, s) =
+#     (((cx - 1) * Ly + (cy - 1)) * Lz + (cz - 1)) * nsub + s
+#
+# Convention: z is the fastest axis, then y, then x (slowest). This is
+# the natural extension of 2D ColMajor (where y is fastest, x slowest):
+# adding a higher-dimensional axis pushes the existing axes outward in
+# storage order. Equivalently: a 3D ColMajor lattice can be read as a
+# stack (along the slowest x axis) of 2D ColMajor (Ly, Lz) slices.
+
+@inline function site_index(
+    ::ColMajor, dims::NTuple{3,Int}, nsub::Int, coord::LatticeCoord{3}
+)
+    @inbounds begin
+        cx, cy, cz = coord.cell
+        s = coord.sublattice
+        Ly = dims[2]
+        Lz = dims[3]
+        return (((cx - 1) * Ly + (cy - 1)) * Lz + (cz - 1)) * nsub + s
+    end
+end
+
+@inline function lattice_coord(::ColMajor, dims::NTuple{3,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Ly = dims[2]
+        Lz = dims[3]
+        cz = c % Lz + 1
+        cxy = c ÷ Lz
+        cy = cxy % Ly + 1
+        cx = cxy ÷ Ly + 1
+        return LatticeCoord((cx, cy, cz), s)
+    end
+end
+
+# ---- 3D Snake ---------------------------------------------------------
+#
+# Boustrophedon ordering in 3D: each (x, y) layer at fixed z is laid
+# out as a 2D snake (x reverses on even y rows), and across layers the
+# y-direction reverses on even z layers so the path is physically
+# contiguous between layers.
+#
+# Concretely, walking along increasing storage index i:
+#   - within a layer, you sweep x ← 1..Lx forward, then Lx..1 back, ...
+#   - on reaching the last row of layer z, the next layer z+1 starts
+#     at the same (x, y) corner you ended on, with y-direction flipped.
+
+@inline function site_index(::Snake, dims::NTuple{3,Int}, nsub::Int, coord::LatticeCoord{3})
+    @inbounds begin
+        cx, cy, cz = coord.cell
+        s = coord.sublattice
+        Lx = dims[1]
+        Ly = dims[2]
+        # z parity selects the y-direction within a layer.
+        effective_y = isodd(cz) ? cy : (Ly + 1 - cy)
+        # The combined parity of effective_y selects the x-direction.
+        effective_x = isodd(effective_y) ? cx : (Lx + 1 - cx)
+        cell_index = ((cz - 1) * Ly + (effective_y - 1)) * Lx + effective_x
+        return (cell_index - 1) * nsub + s
+    end
+end
+
+@inline function lattice_coord(::Snake, dims::NTuple{3,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Lx = dims[1]
+        Ly = dims[2]
+        cell_index = c + 1
+        # Decode layer (cz), in-layer row (effective_y), in-row offset (effective_x).
+        cz = (cell_index - 1) ÷ (Lx * Ly) + 1
+        within_layer = (cell_index - 1) % (Lx * Ly) + 1
+        effective_y = (within_layer - 1) ÷ Lx + 1
+        effective_x = (within_layer - 1) % Lx + 1
+        cx = isodd(effective_y) ? effective_x : (Lx + 1 - effective_x)
+        cy = isodd(cz) ? effective_y : (Ly + 1 - effective_y)
+        return LatticeCoord((cx, cy, cz), s)
+    end
+end
