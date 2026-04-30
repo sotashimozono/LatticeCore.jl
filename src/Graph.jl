@@ -285,9 +285,7 @@ end
 # full `(dist, parent)` arrays so callers can either ask for a single
 # `dst` (early termination via the optional `target` argument) or build
 # an all-pairs distance matrix on top.
-function _dijkstra(
-    lat::AbstractLattice, src::Int, weights::Function, target::Int=0
-)
+function _dijkstra(lat::AbstractLattice, src::Int, weights::Function, target::Int=0)
     N = num_sites(lat)
     dist = fill(Inf, N)
     parent = fill(0, N)
@@ -417,9 +415,7 @@ end
 # because we need real-valued weights, not the Bool adjacency.
 # Multi-edges are folded by taking the minimum (consistent with
 # `adjacency_matrix`'s `combine = |` for Bool).
-function _distance_matrix_floyd_warshall(
-    lat::AbstractLattice, weights::Function, N::Int
-)
+function _distance_matrix_floyd_warshall(lat::AbstractLattice, weights::Function, N::Int)
     D = fill(Inf, N, N)
     @inbounds for i in 1:N
         D[i, i] = 0.0
@@ -455,9 +451,7 @@ end
 # Internal: repeated single-source Dijkstra. Faster than Floyd–Warshall
 # on sparse lattice graphs once N is large (graphs from
 # `AbstractLattice` always have O(N) edges).
-function _distance_matrix_dijkstra(
-    lat::AbstractLattice, weights::Function, N::Int
-)
+function _distance_matrix_dijkstra(lat::AbstractLattice, weights::Function, N::Int)
     D = Matrix{Float64}(undef, N, N)
     for s in 1:N
         dist, _ = _dijkstra(lat, s, weights)
