@@ -16,9 +16,7 @@ end
 function _assert_unique_cover_3d(indexing, dims, nsub)
     seen = Set{Int}()
     for cx in 1:dims[1], cy in 1:dims[2], cz in 1:dims[3], s in 1:nsub
-        push!(
-            seen, site_index(indexing, dims, nsub, LatticeCoord((cx, cy, cz), s))
-        )
+        push!(seen, site_index(indexing, dims, nsub, LatticeCoord((cx, cy, cz), s)))
     end
     @test length(seen) == prod(dims) * nsub
     @test extrema(seen) == (1, prod(dims) * nsub)
