@@ -87,7 +87,8 @@ export AcceptanceWindow, HyperReciprocalLattice, BraggPeakSet
 export materialize, require_finite
 
 # ---- Graph operations ----
-export adjacency_matrix, shortest_path, connected_components
+export adjacency_matrix, shortest_path, distance_matrix, connected_components
+export identity_weight
 
 # ---- Plotting (methods live in LatticeCorePlotsExt) ----
 export plot_lattice, plot_bonds!, plot_sites!
