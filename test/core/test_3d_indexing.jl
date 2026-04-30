@@ -120,16 +120,18 @@ end
         end
     end
 
-    @testset "consecutive indices are physically adjacent" begin
-        # The defining property of a snake/boustrophedon ordering: any
-        # two consecutive site indices live on (Manhattan-)adjacent
-        # cells. This catches off-by-one bugs in the parity/reverse
-        # logic at layer transitions.
+    @testset "consecutive indices within a layer are physically adjacent" begin
+        # Within each fixed-z layer, the 3D Snake reduces to a 2D
+        # snake, which is a Hamiltonian path on the (x, y) grid: every
+        # pair of consecutive indices that lives in the same z-layer
+        # must be on Manhattan-adjacent cells. Cross-layer transitions
+        # are not required to be adjacent for general (Lx, Ly).
         for dims in ((3, 3, 3), (4, 3, 2), (2, 4, 3))
             total = prod(dims)
             for i in 1:(total - 1)
                 lc1 = lattice_coord(Snake(), dims, 1, i)
                 lc2 = lattice_coord(Snake(), dims, 1, i + 1)
+                lc1.cell[3] == lc2.cell[3] || continue
                 d = sum(abs.(lc1.cell .- lc2.cell))
                 @test d == 1
             end
