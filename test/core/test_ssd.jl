@@ -54,8 +54,7 @@ LatticeCore.size_trait(::_SSDInfiniteMockLat) = InfiniteSize()
 
     # Reflection symmetry of the bond weights along the chain.
     for k in 1:(L - 1)
-        @test bond_weight(ssd, lat, k, k + 1) ≈
-            bond_weight(ssd, lat, L - k, L - k + 1)
+        @test bond_weight(ssd, lat, k, k + 1) ≈ bond_weight(ssd, lat, L - k, L - k + 1)
     end
 
     # Order independence in (i, j).
