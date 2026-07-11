@@ -93,6 +93,7 @@ end
 # ---- plot_lattice (1D) ----------------------------------------------
 
 function LatticeCore.plot_lattice(
+    ::LatticeCore.PlotsBackend,
     lat::LatticeCore.AbstractLattice{1,T};
     show_bonds::Bool=true,
     show_sites::Bool=true,
@@ -114,6 +115,7 @@ end
 # ---- plot_lattice (2D) ----------------------------------------------
 
 function LatticeCore.plot_lattice(
+    ::LatticeCore.PlotsBackend,
     lat::LatticeCore.AbstractLattice{2,T};
     show_bonds::Bool=true,
     show_sites::Bool=true,
@@ -361,5 +363,9 @@ function LatticeCore.diffraction_pattern(
         kwargs...,
     )
 end
+
+# Register this backend so `plot_lattice(lat; backend = default_plot_backend())`
+# resolves to Plots once the extension is loaded.
+__init__() = LatticeCore._register_plot_backend(LatticeCore.PlotsBackend())
 
 end # module LatticeCorePlotsExt

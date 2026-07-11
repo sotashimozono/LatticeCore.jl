@@ -11,15 +11,20 @@ Makie backend for LatticeCore, loaded automatically once `Makie` is in scope
 `LatticeCorePlotsExt`, implementing the generic `makie_*` entry points on any
 `AbstractLattice`:
 
-- [`makie_lattice`](@ref) — sites + bonds, sublattice colouring, bond highlight;
+- `plot_lattice(lat; backend = MakieBackend())` — sites + bonds, sublattice
+  colouring, bond highlight (the Makie method of the shared, backend-dispatched
+  `plot_lattice`);
 - [`makie_state`](@ref) — per-site scalar field as a colour-mapped scatter,
   optional in-plane spin arrows;
 - [`makie_structure_factor`](@ref) — static `S(k)` heatmap (2D lattices).
 
-Each returns a `Makie.Figure`. The `makie_` prefix keeps these disjoint from
-the `Plots` backend's `plot_*` methods, so both backends load at once.
+Each returns a `Makie.Figure`.
 """
 LatticeCoreMakieExt
+
+# Register this backend so `plot_lattice(lat; backend = default_plot_backend())`
+# resolves to Makie once the extension is loaded.
+__init__() = LatticeCore._register_plot_backend(LatticeCore.MakieBackend())
 
 # Real-space (x, y) of site i, padding 1D lattices to the y = 0 line.
 @inline function _xy(lat, i)
@@ -54,7 +59,8 @@ function _bond_segments(lat, bs, indices)
     return seg
 end
 
-function LatticeCore.makie_lattice(
+function LatticeCore.plot_lattice(
+    ::LatticeCore.MakieBackend,
     lat::LatticeCore.AbstractLattice;
     colorby::Symbol=:sublattice,
     highlight_bonds=nothing,

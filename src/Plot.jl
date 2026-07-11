@@ -24,10 +24,60 @@ plot_lattice(SimpleSquareLattice(4, 4))
 - Any other keyword is forwarded to the underlying `Plots.plot` call
   (e.g. `title`, `xlabel`, `xlims`).
 
-Calling `plot_lattice` without loading `Plots` first raises a
-`MethodError` that directs the user to the extension.
+Calling `plot_lattice` without loading a backend (`Plots` or `CairoMakie`)
+first raises an error that directs the user to the extension.
 """
-function plot_lattice end
+function plot_lattice(lat::AbstractLattice; backend=default_plot_backend(), kwargs...)
+    return plot_lattice(_as_backend(backend), lat; kwargs...)
+end
+
+# ---- Plotting backends ----------------------------------------------
+
+"""
+    AbstractPlotBackend
+
+Base type for the plotting backends that the `plot_*` functions dispatch on.
+Concrete singletons [`PlotsBackend`](@ref) and [`MakieBackend`](@ref) are
+provided by `LatticeCorePlotsExt` / `LatticeCoreMakieExt` once `Plots` /
+`Makie` is loaded.
+"""
+abstract type AbstractPlotBackend end
+
+"""    PlotsBackend() — dispatch tag selecting the `Plots.jl` backend."""
+struct PlotsBackend <: AbstractPlotBackend end
+
+"""    MakieBackend() — dispatch tag selecting the `Makie.jl` backend."""
+struct MakieBackend <: AbstractPlotBackend end
+
+# Backends register themselves from their extension's `__init__`; the most
+# recently loaded one is the default when `backend` is not given explicitly.
+const _LOADED_PLOT_BACKENDS = AbstractPlotBackend[]
+
+function _register_plot_backend(b::AbstractPlotBackend)
+    b in _LOADED_PLOT_BACKENDS || push!(_LOADED_PLOT_BACKENDS, b)
+    return nothing
+end
+
+"""
+    default_plot_backend() -> AbstractPlotBackend
+
+The backend used by `plot_lattice` when `backend` is not given: the most
+recently loaded of `Plots` / `Makie`. Errors if neither is loaded.
+"""
+function default_plot_backend()
+    isempty(_LOADED_PLOT_BACKENDS) && error(
+        "no plotting backend loaded — run `using Plots` or `using CairoMakie` first, " *
+        "or pass `backend = PlotsBackend()` / `MakieBackend()`",
+    )
+    return _LOADED_PLOT_BACKENDS[end]
+end
+
+_as_backend(b::AbstractPlotBackend) = b
+function _as_backend(s::Symbol)
+    s === :plots && return PlotsBackend()
+    s === :makie && return MakieBackend()
+    throw(ArgumentError("unknown plot backend :$s (use :plots or :makie)"))
+end
 
 """
     plot_bonds!(p, lat::AbstractLattice; kwargs...)
@@ -111,22 +161,11 @@ diffraction_pattern(lat, state, reciprocal_lattice(lat))
 """
 function diffraction_pattern end
 
-# ---- Makie backend stubs (methods live in LatticeCoreMakieExt) ------
-
-"""
-    makie_lattice(lat::AbstractLattice; colorby=:sublattice, highlight_bonds=nothing,
-                  markersize=12, show_sites=true, kwargs...) -> Makie.Figure
-
-Makie-backend lattice drawing: sites (coloured by `:sublattice` id when
-`colorby = :sublattice`, else a single colour) and bonds along the per-bond
-wrapped displacement (no periodic long lines). `highlight_bonds` — a collection
-of bond indices into `collect(bonds(lat))` — are over-drawn in a contrasting
-colour. 1D lattices are drawn on the `y = 0` line.
-
-Concrete method in `LatticeCoreMakieExt`, loaded once `Makie` is in scope. The
-`makie_` prefix keeps it disjoint from the `Plots` backend's `plot_lattice`.
-"""
-function makie_lattice end
+# ---- Makie-specific viz stubs (methods live in LatticeCoreMakieExt) -
+#
+# `plot_lattice(lat; backend = :makie)` covers the shared lattice drawing.
+# These two are Makie-only extras with no counterpart in the Plots foundation
+# (a per-site field scatter and an S(k) heatmap).
 
 """
     makie_state(lat::AbstractLattice, state::AbstractVector; colormap=:RdBu,

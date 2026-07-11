@@ -17,15 +17,24 @@ end
         @test MAKIE_EXT !== nothing
     end
 
-    @testset "makie_lattice: 2D and 1D, renderable" begin
+    @testset "plot_lattice backend dispatch: 2D and 1D, renderable" begin
         for lat in (SimpleSquareLattice(4, 4), LineLattice(8, OpenAxis()))
-            fig = makie_lattice(lat)
+            fig = plot_lattice(lat; backend=MakieBackend())
             @test fig isa Makie.Figure
             @test renders(fig)
         end
         sq = SimpleSquareLattice(4, 4)
-        @test makie_lattice(sq; highlight_bonds=[1, 2, 3]) isa Makie.Figure
-        @test makie_lattice(sq; colorby=:none) isa Makie.Figure
+        @test plot_lattice(sq; backend=:makie, highlight_bonds=[1, 2, 3]) isa Makie.Figure
+        @test plot_lattice(sq; backend=MakieBackend(), colorby=:none) isa Makie.Figure
+    end
+
+    @testset "backend registry & symbol mapping" begin
+        @test MakieBackend() in LatticeCore._LOADED_PLOT_BACKENDS   # registered on load
+        @test default_plot_backend() isa AbstractPlotBackend
+        @test LatticeCore._as_backend(:makie) === MakieBackend()
+        @test LatticeCore._as_backend(:plots) === PlotsBackend()
+        @test LatticeCore._as_backend(MakieBackend()) === MakieBackend()
+        @test_throws ArgumentError plot_lattice(SimpleSquareLattice(3, 3); backend=:nope)
     end
 
     @testset "makie_state: renderable, arrows, validation" begin
