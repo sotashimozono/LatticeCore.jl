@@ -76,7 +76,7 @@ _as_backend(b::AbstractPlotBackend) = b
 function _as_backend(s::Symbol)
     s === :plots && return PlotsBackend()
     s === :makie && return MakieBackend()
-    throw(ArgumentError("unknown plot backend :$s (use :plots or :makie)"))
+    return throw(ArgumentError("unknown plot backend :$s (use :plots or :makie)"))
 end
 
 """
