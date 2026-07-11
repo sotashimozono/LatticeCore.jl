@@ -97,7 +97,7 @@ _iter_length(itr, ::Base.HasLength) = length(itr)
 _iter_length(itr, ::Base.HasShape) = length(itr)
 _iter_length(itr, ::Base.SizeUnknown) = count(_ -> true, itr)
 function _iter_length(itr, ::Base.IsInfinite)
-    throw(ArgumentError("cannot take length of infinite iterator"))
+    return throw(ArgumentError("cannot take length of infinite iterator"))
 end
 
 # elements -------------------------------------------------------------
@@ -122,7 +122,7 @@ function _nth(itr, i::Int)
         k += 1
         k == i && return x
     end
-    throw(BoundsError(itr, i))
+    return throw(BoundsError(itr, i))
 end
 
 # element_positions ----------------------------------------------------

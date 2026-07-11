@@ -65,7 +65,7 @@ struct LatticeCoord{D} <: AbstractCoordinate{D}
 end
 
 function LatticeCoord(cell::NTuple{D,Int}, sublattice::Int=1) where {D}
-    LatticeCoord{D}(cell, sublattice)
+    return LatticeCoord{D}(cell, sublattice)
 end
 
 # ---- HigherDimCoord --------------------------------------------------

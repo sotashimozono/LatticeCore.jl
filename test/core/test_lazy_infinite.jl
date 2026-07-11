@@ -21,7 +21,7 @@ LatticeCore.site_layout(::_InfiniteChain) = UniformLayout(IsingSite())
 struct _InfiniteChainAbstract end
 
 function LatticeCore.materialize(::_InfiniteChainAbstract; depth::Int)
-    LineLattice(depth, PeriodicAxis())
+    return LineLattice(depth, PeriodicAxis())
 end
 
 @testset "LazyInfinite" begin

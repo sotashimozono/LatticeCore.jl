@@ -161,7 +161,7 @@ The returned object is expected to satisfy the
 is [`PeriodicMomentumLattice`](@ref).
 """
 function reciprocal_lattice(lat::AbstractLattice)
-    throw(MethodError(reciprocal_lattice, (lat,)))
+    return throw(MethodError(reciprocal_lattice, (lat,)))
 end
 
 """
@@ -189,7 +189,7 @@ The returned object is expected to be an
 treat periodic and quasiperiodic lattices uniformly.
 """
 function fourier_module(lat::AbstractLattice)
-    throw(MethodError(fourier_module, (lat,)))
+    return throw(MethodError(fourier_module, (lat,)))
 end
 
 """
@@ -203,7 +203,7 @@ momentum_lattice(lat::AbstractLattice) = _momentum_lattice(lat, reciprocal_suppo
 _momentum_lattice(lat, ::HasReciprocal) = reciprocal_lattice(lat)
 _momentum_lattice(lat, ::HasFourierModule) = fourier_module(lat)
 function _momentum_lattice(lat, ::NoReciprocal)
-    throw(ArgumentError("$(typeof(lat)) has no k-space representation"))
+    return throw(ArgumentError("$(typeof(lat)) has no k-space representation"))
 end
 
 # ---- Quasicrystal hooks (type skeletons only) ------------------------

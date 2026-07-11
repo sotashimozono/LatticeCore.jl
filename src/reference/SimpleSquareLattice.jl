@@ -199,7 +199,7 @@ Real-space basis matrix. For the unit-spacing reference square this
 is the 2×2 identity.
 """
 function basis_vectors(::SimpleSquareLattice{T}) where {T}
-    SMatrix{2,2,T}(one(T), zero(T), zero(T), one(T))
+    return SMatrix{2,2,T}(one(T), zero(T), zero(T), one(T))
 end
 
 function reciprocal_lattice(lat::SimpleSquareLattice{T}) where {T}

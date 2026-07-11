@@ -10,7 +10,7 @@ struct TinySquareLattice <: AbstractLattice{2,Float64} end
 
 LatticeCore.num_sites(::TinySquareLattice) = 4
 function LatticeCore.position(::TinySquareLattice, i::Int)
-    (
+    return (
         if (i == 1)
             SVector(0.0, 0.0)
         elseif (i == 2)
@@ -38,7 +38,7 @@ LatticeCore.size_trait(::TinySquareLattice) = FiniteSize((2, 2))
 
 # One square plaquette covering all four sites, cyclic order 1→2→4→3.
 function LatticeCore.plaquettes(::TinySquareLattice)
-    (Plaquette{2,Float64}([1, 2, 4, 3], SVector(0.5, 0.5), :square),)
+    return (Plaquette{2,Float64}([1, 2, 4, 3], SVector(0.5, 0.5), :square),)
 end
 
 @testset "PlaquetteRule and Plaquette types" begin
