@@ -110,3 +110,40 @@ diffraction_pattern(lat, state, reciprocal_lattice(lat))
 - Any other keyword is forwarded to the underlying `Plots.plot`.
 """
 function diffraction_pattern end
+
+# ---- Makie backend stubs (methods live in LatticeCoreMakieExt) ------
+
+"""
+    makie_lattice(lat::AbstractLattice; colorby=:sublattice, highlight_bonds=nothing,
+                  markersize=12, show_sites=true, kwargs...) -> Makie.Figure
+
+Makie-backend lattice drawing: sites (coloured by `:sublattice` id when
+`colorby = :sublattice`, else a single colour) and bonds along the per-bond
+wrapped displacement (no periodic long lines). `highlight_bonds` — a collection
+of bond indices into `collect(bonds(lat))` — are over-drawn in a contrasting
+colour. 1D lattices are drawn on the `y = 0` line.
+
+Concrete method in `LatticeCoreMakieExt`, loaded once `Makie` is in scope. The
+`makie_` prefix keeps it disjoint from the `Plots` backend's `plot_lattice`.
+"""
+function makie_lattice end
+
+"""
+    makie_state(lat::AbstractLattice, state::AbstractVector; colormap=:RdBu,
+                arrows=false, markersize=15, kwargs...) -> Makie.Figure
+
+Per-site `state` (`length == num_sites(lat)`) as a colour-mapped scatter with a
+colour bar. With `arrows = true` the entries are read as in-plane angles (XY
+spins) and drawn as unit arrows. Concrete method in `LatticeCoreMakieExt`.
+"""
+function makie_state end
+
+"""
+    makie_structure_factor(lat::AbstractLattice, state::AbstractVector;
+                           k_range=(-π, π), resolution=200, colormap=:viridis,
+                           kwargs...) -> Makie.Figure
+
+Heatmap of `S(k) = |Σ_j state_j e^{-i k·r_j}|² / N` over a `resolution ×
+resolution` grid of `k = (kx, ky)`. Concrete method in `LatticeCoreMakieExt`.
+"""
+function makie_structure_factor end
