@@ -125,7 +125,7 @@ Default: throws — concrete lattices that opt into
 provide a method here.
 """
 function _reshape_state(lat::AbstractLattice, state, dims)
-    error(
+    return error(
         "LatticeCore._reshape_state not defined for $(typeof(lat)); ",
         "opt in by defining `LatticeCore._reshape_state(::MyLattice, state, dims)` ",
         "alongside `LatticeCore._has_known_grid(::MyLattice) = true`.",

@@ -1,6 +1,7 @@
 module LatticeCore
 
 using LinearAlgebra
+using SparseArrays
 using StaticArrays
 
 # We extend `Base.position` for `AbstractLattice` so downstream code can
@@ -22,6 +23,10 @@ include("MomentumLattice.jl")
 include("StructureFactor.jl")
 include("LazyInfinite.jl")
 include("Graph.jl")
+include("TightBinding.jl")
+include("Localization.jl")
+include("DynamicStructureFactor.jl")
+include("Regions.jl")
 include("Plot.jl")
 include("reference/LineLattice.jl")
 include("reference/SimpleSquareLattice.jl")
@@ -88,6 +93,15 @@ export materialize, require_finite
 
 # ---- Graph operations ----
 export adjacency_matrix, shortest_path, distance_matrix, connected_components
+
+# Tight-binding & spectral analysis (TightBinding.jl / Localization.jl)
+export tight_binding_hamiltonian, spectrum, eigenstates, density_of_states
+export inverse_participation_ratio, inverse_participation_ratios
+export mean_inverse_participation_ratio, ipr_scaling, ipr_scaling_exponent
+# Dynamic structure factor (DynamicStructureFactor.jl)
+export dynamic_structure_factor
+# Edge / bulk regions (Regions.jl)
+export edge_sites, bulk_sites, edge_bonds
 export identity_weight
 
 # ---- Plotting (methods live in LatticeCorePlotsExt) ----
