@@ -106,6 +106,8 @@ export identity_weight
 
 # ---- Plotting (methods live in LatticeCorePlotsExt) ----
 export plot_lattice, plot_bonds!, plot_sites!
+export AbstractPlotBackend, PlotsBackend, MakieBackend, default_plot_backend
+export makie_state, makie_structure_factor
 export diffraction_pattern
 
 # ---- Reference lattices ----

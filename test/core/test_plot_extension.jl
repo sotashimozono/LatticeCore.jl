@@ -16,36 +16,36 @@ const _LAT_CORE_EXT = Base.get_extension(LatticeCore, :LatticeCorePlotsExt)
 
     # `plot_lattice` should now resolve to at least one concrete method
     # for the 1D and 2D reference lattices.
-    @test !isempty(methods(plot_lattice, (AbstractLattice{1,Float64},)))
-    @test !isempty(methods(plot_lattice, (AbstractLattice{2,Float64},)))
+    @test !isempty(methods(plot_lattice, (PlotsBackend, AbstractLattice{1,Float64})))
+    @test !isempty(methods(plot_lattice, (PlotsBackend, AbstractLattice{2,Float64})))
 end
 
 @testset "plot_lattice on LineLattice" begin
     lat = LineLattice(6, PeriodicAxis())
-    p = plot_lattice(lat; title="LineLattice PBC 6")
+    p = plot_lattice(lat; backend=PlotsBackend(), title="LineLattice PBC 6")
     @test p isa Plots.Plot
 
     # Without bonds
-    p_no_bonds = plot_lattice(lat; show_bonds=false)
+    p_no_bonds = plot_lattice(lat; backend=PlotsBackend(), show_bonds=false)
     @test p_no_bonds isa Plots.Plot
 
     # Custom site colour
-    p_colored = plot_lattice(lat; site_color=:red)
+    p_colored = plot_lattice(lat; backend=PlotsBackend(), site_color=:red)
     @test p_colored isa Plots.Plot
 end
 
 @testset "plot_lattice on SimpleSquareLattice" begin
     lat = SimpleSquareLattice(3, 3, PeriodicAxis())
-    p = plot_lattice(lat; title="Square PBC 3x3")
+    p = plot_lattice(lat; backend=PlotsBackend(), title="Square PBC 3x3")
     @test p isa Plots.Plot
 
     # Cylinder: mixed BC still works
     cyl = SimpleSquareLattice(3, 4, LatticeBoundary((PeriodicAxis(), OpenAxis())))
-    p_cyl = plot_lattice(cyl; title="Cylinder 3x4")
+    p_cyl = plot_lattice(cyl; backend=PlotsBackend(), title="Cylinder 3x4")
     @test p_cyl isa Plots.Plot
 
     # show_sites = false still produces a plot
-    p_bonds_only = plot_lattice(lat; show_sites=false)
+    p_bonds_only = plot_lattice(lat; backend=PlotsBackend(), show_sites=false)
     @test p_bonds_only isa Plots.Plot
 end
 
