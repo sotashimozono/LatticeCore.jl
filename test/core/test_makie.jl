@@ -3,15 +3,14 @@ using Test
 
 const MAKIE_EXT = Base.get_extension(LatticeCore, :LatticeCoreMakieExt)
 
-renders(fig) =
-    mktemp() do path, io
-        close(io)
-        p = path * ".png"
-        CairoMakie.save(p, fig)
-        ok = isfile(p) && filesize(p) > 0
-        rm(p; force=true)
-        return ok
-    end
+renders(fig) = mktemp() do path, io
+    close(io)
+    p = path * ".png"
+    CairoMakie.save(p, fig)
+    ok = isfile(p) && filesize(p) > 0
+    rm(p; force=true)
+    return ok
+end
 
 @testset "LatticeCoreMakieExt" begin
     @testset "extension loads with Makie" begin
