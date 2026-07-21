@@ -10,9 +10,10 @@ struct _StepLattice <: AbstractLattice{2,Float64}
     n::Int
 end
 LatticeCore.scaling_rule(::_StepLattice) = LinearScaling(2)
-LatticeCore.rescale(l::_StepLattice, k::Integer = 1) = _StepLattice(l.n * 2^k)
-LatticeCore.cell_partition(l::_StepLattice, k::Integer = 1) =
-    [collect(((c - 1) * 2^k + 1):(c * 2^k)) for c in 1:(l.n ÷ 2^k)]
+LatticeCore.rescale(l::_StepLattice, k::Integer=1) = _StepLattice(l.n * 2^k)
+function LatticeCore.cell_partition(l::_StepLattice, k::Integer=1)
+    return [collect(((c - 1) * 2 ^ k + 1):(c * 2 ^ k)) for c in 1:(l.n ÷ 2 ^ k)]
+end
 
 @testset "scaling rule traits" begin
     @test NoScaling() isa AbstractScalingRule

@@ -138,9 +138,10 @@ The aperiodic case — the sequence of admissible sizes is dictated by the rule
 """
 struct SubstitutionScaling <: AbstractScalingRule
     depth_step::Int
-    function SubstitutionScaling(depth_step::Integer = 1)
-        depth_step > 0 ||
-            throw(ArgumentError("SubstitutionScaling needs depth_step > 0; got $depth_step"))
+    function SubstitutionScaling(depth_step::Integer=1)
+        depth_step > 0 || throw(
+            ArgumentError("SubstitutionScaling needs depth_step > 0; got $depth_step")
+        )
         return new(Int(depth_step))
     end
 end

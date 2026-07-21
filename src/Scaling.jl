@@ -37,11 +37,13 @@ code that a quasicrystal cannot supply.
 Concrete lattice packages implement this; there is no meaningful generic
 fallback, so the default throws.
 """
-function rescale(lat::AbstractLattice, k::Integer = 1)
-    return throw(ArgumentError(
-        "rescale is not implemented for $(typeof(lat)) (scaling_rule = $(scaling_rule(lat))). " *
-        "A lattice family must define `rescale(lat, k)` to take part in size sequences."
-    ))
+function rescale(lat::AbstractLattice, k::Integer=1)
+    return throw(
+        ArgumentError(
+            "rescale is not implemented for $(typeof(lat)) (scaling_rule = $(scaling_rule(lat))). " *
+            "A lattice family must define `rescale(lat, k)` to take part in size sequences.",
+        ),
+    )
 end
 
 """
@@ -73,9 +75,11 @@ configuration between two members of a [`size_sequence`](@ref).
 
 Concrete lattice packages implement this; the default throws.
 """
-function cell_partition(lat::AbstractLattice, k::Integer = 1)
-    return throw(ArgumentError(
-        "cell_partition is not implemented for $(typeof(lat)) " *
-        "(scaling_rule = $(scaling_rule(lat)))."
-    ))
+function cell_partition(lat::AbstractLattice, k::Integer=1)
+    return throw(
+        ArgumentError(
+            "cell_partition is not implemented for $(typeof(lat)) " *
+            "(scaling_rule = $(scaling_rule(lat))).",
+        ),
+    )
 end
