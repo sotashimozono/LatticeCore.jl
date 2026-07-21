@@ -22,6 +22,7 @@ include("Indexing.jl")
 include("MomentumLattice.jl")
 include("StructureFactor.jl")
 include("LazyInfinite.jl")
+include("Scaling.jl")
 include("Graph.jl")
 include("TightBinding.jl")
 include("Localization.jl")
@@ -90,6 +91,10 @@ export AcceptanceWindow, HyperReciprocalLattice, BraggPeakSet
 
 # ---- Lazy / infinite ----
 export materialize, require_finite
+
+# ---- Scale changes ----
+export AbstractScalingRule, NoScaling, LinearScaling, SubstitutionScaling
+export scaling_rule, rescale, size_sequence, cell_partition
 
 # ---- Graph operations ----
 export adjacency_matrix, shortest_path, distance_matrix, connected_components

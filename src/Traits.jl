@@ -93,3 +93,54 @@ the lattice family.
 struct QuasiInfiniteSize{T} <: AbstractSizeTrait
     cutoff::T
 end
+
+# ---- Scale changes ----------------------------------------------------
+
+"""
+    AbstractScalingRule
+
+Trait describing how a lattice family generates a sequence of sizes, i.e. what
+"the same lattice, one step larger" means for it.
+
+Subtypes:
+- [`NoScaling`](@ref): no canonical size sequence.
+- [`LinearScaling`](@ref): per-axis cell counts multiply by a fixed factor.
+- [`SubstitutionScaling`](@ref): sizes come from a substitution/inflation rule,
+  as for a quasicrystal, where there is no single side length to double.
+
+See [`scaling_rule`](@ref), [`rescale`](@ref), [`size_sequence`](@ref).
+"""
+abstract type AbstractScalingRule end
+
+"""Trait: the lattice offers no canonical way to change scale."""
+struct NoScaling <: AbstractScalingRule end
+
+"""
+    LinearScaling(factor::Int)
+
+Trait: one scale step multiplies every per-axis cell count by `factor`.
+The ordinary Bravais case.
+"""
+struct LinearScaling <: AbstractScalingRule
+    factor::Int
+    function LinearScaling(factor::Integer)
+        factor > 1 || throw(ArgumentError("LinearScaling needs factor > 1; got $factor"))
+        return new(Int(factor))
+    end
+end
+
+"""
+    SubstitutionScaling(depth_step::Int = 1)
+
+Trait: one scale step advances a substitution/inflation rule by `depth_step`.
+The aperiodic case — the sequence of admissible sizes is dictated by the rule
+(Fibonacci lengths, inflation radii, …) rather than by an integer side length.
+"""
+struct SubstitutionScaling <: AbstractScalingRule
+    depth_step::Int
+    function SubstitutionScaling(depth_step::Integer = 1)
+        depth_step > 0 ||
+            throw(ArgumentError("SubstitutionScaling needs depth_step > 0; got $depth_step"))
+        return new(Int(depth_step))
+    end
+end
