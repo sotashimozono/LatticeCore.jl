@@ -65,9 +65,15 @@ size_sequence(lat::AbstractLattice, n::Integer) = [rescale(lat, k) for k in 0:n]
 """
     cell_partition(lat::AbstractLattice, k::Integer = 1) -> Vector{Vector{Int}}
 
-Group the sites of `lat` by which cell of `rescale(lat, k)` they fall into: entry
-`c` lists the site indices of `lat` belonging to cell `c` of the larger-scale
-lattice. Together the groups partition `1:num_sites(lat)`.
+Group the sites of `lat` by which cell of the lattice `k` steps **coarser** —
+that is, of `rescale(lat, -k)` — they fall into. Entry `c` lists the site indices
+of `lat` belonging to cell `c` of that coarser lattice, and together the groups
+partition `1:num_sites(lat)`.
+
+Note the direction: `rescale(lat, k)` goes *up* in size and has more cells than
+`lat`, so it is the `-k` lattice whose cells are unions of `lat`'s. A family that
+cannot take the downward step (`LinearScaling` with cell counts not divisible by
+`factor^k`, say) should raise rather than round.
 
 Useful whenever a quantity defined per site has to be compared across scales —
 cell averages of a local observable, cell-resolved densities, or transferring a
