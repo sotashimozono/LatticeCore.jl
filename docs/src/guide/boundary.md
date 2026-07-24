@@ -124,8 +124,13 @@ Every axis BC is a dispatch point for two generic functions:
 
 Modifiers dispatch through [`bond_weight(modifier, lat, i, j)`](@ref
 bond_weight). [`NoModifier`](@ref) returns `1.0` unconditionally;
-[`SSD`](@ref)'s weighting function is a stub until the MC layer
-lands a `center(lat)` accessor.
+[`SSD`](@ref) evaluates the canonical multi-axis envelope
+`∏_d sin²(π (c_d − 1/2) / L_d)` at each endpoint and returns the
+arithmetic mean, taking `(L_1, …, L_D)` from
+[`size_trait`](@ref). It requires a [`FiniteSize`](@ref) lattice
+and is BC-agnostic — typically combined with [`OpenAxis`](@ref) on
+every axis, but the weight evaluation itself is independent of the
+axis tuple.
 
 ## Adding a new axis BC
 

@@ -1,6 +1,7 @@
 module LatticeCore
 
 using LinearAlgebra
+using SparseArrays
 using StaticArrays
 
 # We extend `Base.position` for `AbstractLattice` so downstream code can
@@ -22,6 +23,12 @@ include("MomentumLattice.jl")
 include("StructureFactor.jl")
 include("LazyInfinite.jl")
 include("TranslationCell.jl")
+include("Scaling.jl")
+include("Graph.jl")
+include("TightBinding.jl")
+include("Localization.jl")
+include("DynamicStructureFactor.jl")
+include("Regions.jl")
 include("Plot.jl")
 include("reference/LineLattice.jl")
 include("reference/SimpleSquareLattice.jl")
@@ -93,8 +100,27 @@ export translation_vectors, num_basis_sites, basis_position, cell_bonds
 export site_orbits, bond_orbits
 export cell_position, incident_cell_bonds, neighbors_at
 
+# ---- Scale changes ----
+export AbstractScalingRule, NoScaling, LinearScaling, SubstitutionScaling
+export scaling_rule, rescale, size_sequence, cell_partition
+
+# ---- Graph operations ----
+export adjacency_matrix, shortest_path, distance_matrix, connected_components
+
+# Tight-binding & spectral analysis (TightBinding.jl / Localization.jl)
+export tight_binding_hamiltonian, spectrum, eigenstates, density_of_states
+export inverse_participation_ratio, inverse_participation_ratios
+export mean_inverse_participation_ratio, ipr_scaling, ipr_scaling_exponent
+# Dynamic structure factor (DynamicStructureFactor.jl)
+export dynamic_structure_factor
+# Edge / bulk regions (Regions.jl)
+export edge_sites, bulk_sites, edge_bonds
+export identity_weight
+
 # ---- Plotting (methods live in LatticeCorePlotsExt) ----
 export plot_lattice, plot_bonds!, plot_sites!
+export AbstractPlotBackend, PlotsBackend, MakieBackend, default_plot_backend
+export makie_state, makie_structure_factor
 export diffraction_pattern
 
 # ---- Reference lattices ----

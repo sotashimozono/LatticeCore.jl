@@ -156,3 +156,12 @@ function reciprocal_lattice(lat::LineLattice{T}) where {T}
     B = SMatrix{1,1,T}(T(2π) * inv(transpose(A)))
     return monkhorst_pack(B, (lat.N,))
 end
+
+# ---- FFT fast-path opt-in (see `src/StructureFactor.jl`) -------------
+#
+# `LineLattice`: site `i` ↔ position `i`, so `state[i]` lays out as a
+# 1D grid of length `N` directly. We register the opt-in here (not in
+# `LatticeCoreFFTWExt`) so it remains visible to `Lattice2D` /
+# downstream code without requiring FFTW to be loaded.
+_has_known_grid(::LineLattice) = true
+_reshape_state(::LineLattice, state, dims) = reshape(state, dims)

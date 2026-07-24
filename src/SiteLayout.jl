@@ -49,6 +49,21 @@ which sublattice site `i` belongs to (1-based).
 
 This is the natural layout for mixed-spin models (e.g. Ising on the
 A sublattice, XY on B).
+
+# Ownership / mutability contract
+
+`SublatticeLayout` stores the `sublattice_of::Vector{Int}` argument
+**by reference**, not by copy. The caller MUST treat the vector as
+immutable for the lifetime of the `SublatticeLayout`: mutating it
+(`push!`, `setindex!`, `resize!`, etc.) after construction will
+silently corrupt site-type lookups, since `site_type(layout, i)`
+indexes directly into this storage.
+
+If the caller wants to keep a mutable copy of the assignment, it
+should pass `copy(sublattice_of)` to the constructor explicitly.
+A future release may switch the field to a read-only container
+(e.g. an `NTuple{M,Int}` or a wrapper); doing so would be a
+breaking change and is tracked separately.
 """
 struct SublatticeLayout{N,Tup<:NTuple{N,AbstractSiteType}} <: AbstractSiteLayout
     by_sublattice::Tup

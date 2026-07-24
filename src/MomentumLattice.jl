@@ -138,22 +138,58 @@ end
 """
     reciprocal_lattice(lat::AbstractLattice) → PeriodicMomentumLattice
 
-Construct the reciprocal lattice for a Bravais-like `lat`. Concrete
-lattices are expected to specialise this method; the fallback throws.
+Construct the reciprocal lattice for a Bravais-like `lat`.
+
+# Trait contract
+
+This method is a **required override** for any concrete lattice
+whose `reciprocal_support(lat)` returns [`HasReciprocal`](@ref).
+The fallback deliberately throws a `MethodError` so missing
+implementations surface immediately at the trait dispatch site
+(see [`momentum_lattice`](@ref), which routes `HasReciprocal`
+lattices through `reciprocal_lattice`).
+
+Lattices with `reciprocal_support(lat) == NoReciprocal()` MUST NOT
+override this method — they have no Bravais reciprocal structure
+and `momentum_lattice` will refuse to call them. Lattices with
+`HasFourierModule()` should implement [`fourier_module`](@ref)
+instead.
+
+The returned object is expected to satisfy the
+[`AbstractMomentumLattice`](@ref) interface (`num_k_points`,
+`k_point`, `reciprocal_basis`); the canonical concrete return type
+is [`PeriodicMomentumLattice`](@ref).
 """
 function reciprocal_lattice(lat::AbstractLattice)
-    throw(MethodError(reciprocal_lattice, (lat,)))
+    return throw(MethodError(reciprocal_lattice, (lat,)))
 end
 
 """
     fourier_module(lat::AbstractLattice) → AbstractMomentumLattice
 
 Quasicrystal-side entry point: construct the discrete Fourier module
-(Bragg peak set) for a cut-and-project lattice. Concrete quasicrystal
-lattices implement this in their own package; the fallback throws.
+(Bragg peak set) for a cut-and-project lattice.
+
+# Trait contract
+
+This method is a **required override** for any concrete lattice
+whose `reciprocal_support(lat)` returns [`HasFourierModule`](@ref).
+Concrete quasicrystal lattices implement it in their own package
+(typically `QuasiCrystal.jl`); the fallback throws a `MethodError`
+so the trait/method mismatch is visible at the call site through
+[`momentum_lattice`](@ref).
+
+Lattices with [`HasReciprocal`](@ref) should implement
+[`reciprocal_lattice`](@ref) instead, and lattices with
+[`NoReciprocal`](@ref) should not override either.
+
+The returned object is expected to be an
+[`AbstractMomentumLattice`](@ref) — typically a
+[`BraggPeakSet`](@ref) — so observers like `structure_factor`
+treat periodic and quasiperiodic lattices uniformly.
 """
 function fourier_module(lat::AbstractLattice)
-    throw(MethodError(fourier_module, (lat,)))
+    return throw(MethodError(fourier_module, (lat,)))
 end
 
 """
@@ -167,7 +203,7 @@ momentum_lattice(lat::AbstractLattice) = _momentum_lattice(lat, reciprocal_suppo
 _momentum_lattice(lat, ::HasReciprocal) = reciprocal_lattice(lat)
 _momentum_lattice(lat, ::HasFourierModule) = fourier_module(lat)
 function _momentum_lattice(lat, ::NoReciprocal)
-    throw(ArgumentError("$(typeof(lat)) has no k-space representation"))
+    return throw(ArgumentError("$(typeof(lat)) has no k-space representation"))
 end
 
 # ---- Quasicrystal hooks (type skeletons only) ------------------------

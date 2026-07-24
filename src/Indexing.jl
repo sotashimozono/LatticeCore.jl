@@ -67,56 +67,115 @@ function lattice_coord end
 # only RowMajor for 1D and let the others fall through (they would
 # simply error out; 1D Snake is actively meaningless).
 
-function site_index(::RowMajor, dims::NTuple{1,Int}, nsub::Int, coord::LatticeCoord{1})
-    cx = coord.cell[1]
+# Performance note: the round-trip arithmetic below is purely bounded
+# integer ops (`÷`, `%`, `+`, `*`) on values that the caller is expected
+# to keep within `1:prod(dims) * nsub`. We use `@inbounds` to elide
+# tuple bounds checks on `dims[..]` / `coord.cell[..]`; the math itself
+# already cannot fault. Out-of-range `i` or `coord` is the caller's
+# contract to avoid (consistent with `getindex` on a `Vector`).
+
+@inline function site_index(
+    ::RowMajor, dims::NTuple{1,Int}, nsub::Int, coord::LatticeCoord{1}
+)
+    @inbounds cx = coord.cell[1]
     s = coord.sublattice
     return (cx - 1) * nsub + s
 end
 
-function lattice_coord(::RowMajor, ::NTuple{1,Int}, nsub::Int, i::Int)
-    c = (i - 1) ÷ nsub
-    s = (i - 1) % nsub + 1
-    return LatticeCoord((c + 1,), s)
+@inline function lattice_coord(::RowMajor, ::NTuple{1,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        return LatticeCoord((c + 1,), s)
+    end
 end
 
 # ---- 2D RowMajor ------------------------------------------------------
 #
 # site_index(cx, cy, s) = ((cy - 1) * Lx + (cx - 1)) * nsub + s
 
-function site_index(::RowMajor, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2})
-    cx, cy = coord.cell
-    s = coord.sublattice
-    Lx = dims[1]
-    return ((cy - 1) * Lx + (cx - 1)) * nsub + s
+@inline function site_index(
+    ::RowMajor, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2}
+)
+    @inbounds begin
+        cx, cy = coord.cell
+        s = coord.sublattice
+        Lx = dims[1]
+        return ((cy - 1) * Lx + (cx - 1)) * nsub + s
+    end
 end
 
-function lattice_coord(::RowMajor, dims::NTuple{2,Int}, nsub::Int, i::Int)
-    c = (i - 1) ÷ nsub
-    s = (i - 1) % nsub + 1
-    Lx = dims[1]
-    cx = c % Lx + 1
-    cy = c ÷ Lx + 1
-    return LatticeCoord((cx, cy), s)
+@inline function lattice_coord(::RowMajor, dims::NTuple{2,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Lx = dims[1]
+        cx = c % Lx + 1
+        cy = c ÷ Lx + 1
+        return LatticeCoord((cx, cy), s)
+    end
 end
 
 # ---- 2D ColMajor ------------------------------------------------------
 #
 # site_index(cx, cy, s) = ((cx - 1) * Ly + (cy - 1)) * nsub + s
 
-function site_index(::ColMajor, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2})
-    cx, cy = coord.cell
-    s = coord.sublattice
-    Ly = dims[2]
-    return ((cx - 1) * Ly + (cy - 1)) * nsub + s
+@inline function site_index(
+    ::ColMajor, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2}
+)
+    @inbounds begin
+        cx, cy = coord.cell
+        s = coord.sublattice
+        Ly = dims[2]
+        return ((cx - 1) * Ly + (cy - 1)) * nsub + s
+    end
 end
 
-function lattice_coord(::ColMajor, dims::NTuple{2,Int}, nsub::Int, i::Int)
-    c = (i - 1) ÷ nsub
-    s = (i - 1) % nsub + 1
-    Ly = dims[2]
-    cy = c % Ly + 1
-    cx = c ÷ Ly + 1
-    return LatticeCoord((cx, cy), s)
+@inline function lattice_coord(::ColMajor, dims::NTuple{2,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Ly = dims[2]
+        cy = c % Ly + 1
+        cx = c ÷ Ly + 1
+        return LatticeCoord((cx, cy), s)
+    end
+end
+
+# ---- 3D RowMajor ------------------------------------------------------
+#
+# site_index(cx, cy, cz, s) =
+#     (((cz - 1) * Ly + (cy - 1)) * Lx + (cx - 1)) * nsub + s
+#
+# Convention: x is the fastest axis, then y, then z (slowest). This
+# matches the 2D RowMajor extension and is the natural ordering for
+# downstream consumers that treat a 3D lattice as a stack of
+# row-major 2D slices.
+
+@inline function site_index(
+    ::RowMajor, dims::NTuple{3,Int}, nsub::Int, coord::LatticeCoord{3}
+)
+    @inbounds begin
+        cx, cy, cz = coord.cell
+        s = coord.sublattice
+        Lx = dims[1]
+        Ly = dims[2]
+        return (((cz - 1) * Ly + (cy - 1)) * Lx + (cx - 1)) * nsub + s
+    end
+end
+
+@inline function lattice_coord(::RowMajor, dims::NTuple{3,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Lx = dims[1]
+        Ly = dims[2]
+        cx = c % Lx + 1
+        cyz = c ÷ Lx
+        cy = cyz % Ly + 1
+        cz = cyz ÷ Ly + 1
+        return LatticeCoord((cx, cy, cz), s)
+    end
 end
 
 # ---- 2D Snake ---------------------------------------------------------
@@ -124,22 +183,108 @@ end
 # Row-major layout, but within each row the x-direction alternates:
 # odd rows walk x = 1..Lx, even rows walk x = Lx..1.
 
-function site_index(::Snake, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2})
-    cx, cy = coord.cell
-    s = coord.sublattice
-    Lx = dims[1]
-    effective_x = isodd(cy) ? cx : (Lx + 1 - cx)
-    cell_index = (cy - 1) * Lx + effective_x
-    return (cell_index - 1) * nsub + s
+@inline function site_index(::Snake, dims::NTuple{2,Int}, nsub::Int, coord::LatticeCoord{2})
+    @inbounds begin
+        cx, cy = coord.cell
+        s = coord.sublattice
+        Lx = dims[1]
+        effective_x = isodd(cy) ? cx : (Lx + 1 - cx)
+        cell_index = (cy - 1) * Lx + effective_x
+        return (cell_index - 1) * nsub + s
+    end
 end
 
-function lattice_coord(::Snake, dims::NTuple{2,Int}, nsub::Int, i::Int)
-    c = (i - 1) ÷ nsub
-    s = (i - 1) % nsub + 1
-    Lx = dims[1]
-    cell_index = c + 1
-    cy = (cell_index - 1) ÷ Lx + 1
-    effective_x = (cell_index - 1) % Lx + 1
-    cx = isodd(cy) ? effective_x : (Lx + 1 - effective_x)
-    return LatticeCoord((cx, cy), s)
+@inline function lattice_coord(::Snake, dims::NTuple{2,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Lx = dims[1]
+        cell_index = c + 1
+        cy = (cell_index - 1) ÷ Lx + 1
+        effective_x = (cell_index - 1) % Lx + 1
+        cx = isodd(cy) ? effective_x : (Lx + 1 - effective_x)
+        return LatticeCoord((cx, cy), s)
+    end
+end
+
+# ---- 3D ColMajor ------------------------------------------------------
+#
+# site_index(cx, cy, cz, s) =
+#     (((cx - 1) * Ly + (cy - 1)) * Lz + (cz - 1)) * nsub + s
+#
+# Convention: z is the fastest axis, then y, then x (slowest). This is
+# the natural extension of 2D ColMajor (where y is fastest, x slowest):
+# adding a higher-dimensional axis pushes the existing axes outward in
+# storage order. Equivalently: a 3D ColMajor lattice can be read as a
+# stack (along the slowest x axis) of 2D ColMajor (Ly, Lz) slices.
+
+@inline function site_index(
+    ::ColMajor, dims::NTuple{3,Int}, nsub::Int, coord::LatticeCoord{3}
+)
+    @inbounds begin
+        cx, cy, cz = coord.cell
+        s = coord.sublattice
+        Ly = dims[2]
+        Lz = dims[3]
+        return (((cx - 1) * Ly + (cy - 1)) * Lz + (cz - 1)) * nsub + s
+    end
+end
+
+@inline function lattice_coord(::ColMajor, dims::NTuple{3,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Ly = dims[2]
+        Lz = dims[3]
+        cz = c % Lz + 1
+        cxy = c ÷ Lz
+        cy = cxy % Ly + 1
+        cx = cxy ÷ Ly + 1
+        return LatticeCoord((cx, cy, cz), s)
+    end
+end
+
+# ---- 3D Snake ---------------------------------------------------------
+#
+# Boustrophedon ordering in 3D: each (x, y) layer at fixed z is laid
+# out as a 2D snake (x reverses on even y rows), and across layers the
+# y-direction reverses on even z layers so the path is physically
+# contiguous between layers.
+#
+# Concretely, walking along increasing storage index i:
+#   - within a layer, you sweep x ← 1..Lx forward, then Lx..1 back, ...
+#   - on reaching the last row of layer z, the next layer z+1 starts
+#     at the same (x, y) corner you ended on, with y-direction flipped.
+
+@inline function site_index(::Snake, dims::NTuple{3,Int}, nsub::Int, coord::LatticeCoord{3})
+    @inbounds begin
+        cx, cy, cz = coord.cell
+        s = coord.sublattice
+        Lx = dims[1]
+        Ly = dims[2]
+        # z parity selects the y-direction within a layer.
+        effective_y = isodd(cz) ? cy : (Ly + 1 - cy)
+        # The combined parity of effective_y selects the x-direction.
+        effective_x = isodd(effective_y) ? cx : (Lx + 1 - cx)
+        cell_index = ((cz - 1) * Ly + (effective_y - 1)) * Lx + effective_x
+        return (cell_index - 1) * nsub + s
+    end
+end
+
+@inline function lattice_coord(::Snake, dims::NTuple{3,Int}, nsub::Int, i::Int)
+    @inbounds begin
+        c = (i - 1) ÷ nsub
+        s = (i - 1) % nsub + 1
+        Lx = dims[1]
+        Ly = dims[2]
+        cell_index = c + 1
+        # Decode layer (cz), in-layer row (effective_y), in-row offset (effective_x).
+        cz = (cell_index - 1) ÷ (Lx * Ly) + 1
+        within_layer = (cell_index - 1) % (Lx * Ly) + 1
+        effective_y = (within_layer - 1) ÷ Lx + 1
+        effective_x = (within_layer - 1) % Lx + 1
+        cx = isodd(effective_y) ? effective_x : (Lx + 1 - effective_x)
+        cy = isodd(cz) ? effective_y : (Ly + 1 - effective_y)
+        return LatticeCoord((cx, cy, cz), s)
+    end
 end

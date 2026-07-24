@@ -16,36 +16,36 @@ const _LAT_CORE_EXT = Base.get_extension(LatticeCore, :LatticeCorePlotsExt)
 
     # `plot_lattice` should now resolve to at least one concrete method
     # for the 1D and 2D reference lattices.
-    @test !isempty(methods(plot_lattice, (AbstractLattice{1,Float64},)))
-    @test !isempty(methods(plot_lattice, (AbstractLattice{2,Float64},)))
+    @test !isempty(methods(plot_lattice, (PlotsBackend, AbstractLattice{1,Float64})))
+    @test !isempty(methods(plot_lattice, (PlotsBackend, AbstractLattice{2,Float64})))
 end
 
 @testset "plot_lattice on LineLattice" begin
     lat = LineLattice(6, PeriodicAxis())
-    p = plot_lattice(lat; title="LineLattice PBC 6")
+    p = plot_lattice(lat; backend=PlotsBackend(), title="LineLattice PBC 6")
     @test p isa Plots.Plot
 
     # Without bonds
-    p_no_bonds = plot_lattice(lat; show_bonds=false)
+    p_no_bonds = plot_lattice(lat; backend=PlotsBackend(), show_bonds=false)
     @test p_no_bonds isa Plots.Plot
 
     # Custom site colour
-    p_colored = plot_lattice(lat; site_color=:red)
+    p_colored = plot_lattice(lat; backend=PlotsBackend(), site_color=:red)
     @test p_colored isa Plots.Plot
 end
 
 @testset "plot_lattice on SimpleSquareLattice" begin
     lat = SimpleSquareLattice(3, 3, PeriodicAxis())
-    p = plot_lattice(lat; title="Square PBC 3x3")
+    p = plot_lattice(lat; backend=PlotsBackend(), title="Square PBC 3x3")
     @test p isa Plots.Plot
 
     # Cylinder: mixed BC still works
     cyl = SimpleSquareLattice(3, 4, LatticeBoundary((PeriodicAxis(), OpenAxis())))
-    p_cyl = plot_lattice(cyl; title="Cylinder 3x4")
+    p_cyl = plot_lattice(cyl; backend=PlotsBackend(), title="Cylinder 3x4")
     @test p_cyl isa Plots.Plot
 
     # show_sites = false still produces a plot
-    p_bonds_only = plot_lattice(lat; show_sites=false)
+    p_bonds_only = plot_lattice(lat; backend=PlotsBackend(), show_sites=false)
     @test p_bonds_only isa Plots.Plot
 end
 
@@ -118,4 +118,41 @@ end
     # Uniform-intensity degenerate case: single peak at Γ.
     bps_single = BraggPeakSet{2,4,Float64}([SVector(0.0, 0.0)], [1.0], [(0, 0, 0, 0)])
     @test diffraction_pattern(bps_single) isa Plots.Plot
+end
+
+@testset "diffraction_pattern from (lat, state, q_grid)" begin
+    # 2D regular mesh: heatmap of |S(q)|² for a Néel state on a 4x4
+    # square. We just need a `Plots.Plot` back; the structure_factor
+    # numerics are covered in test_structure_factor.jl.
+    lat = SimpleSquareLattice(4, 4, PeriodicAxis())
+    N = num_sites(lat)
+    state_neel = Vector{Int8}(undef, N)
+    for i in 1:N
+        p = position(lat, i)
+        state_neel[i] = Int8((-1)^(Int(p[1]) + Int(p[2])))
+    end
+    ml = reciprocal_lattice(lat)
+    p2d = diffraction_pattern(lat, state_neel, ml; title="square Neel")
+    @test p2d isa Plots.Plot
+
+    # `log_intensity` kwarg is plumbed through.
+    p2d_log = diffraction_pattern(lat, state_neel, ml; log_intensity=true)
+    @test p2d_log isa Plots.Plot
+
+    # Explicit intensity selectors don't blow up.
+    @test diffraction_pattern(lat, state_neel, ml; intensity=:S) isa Plots.Plot
+    @test diffraction_pattern(lat, state_neel, ml; intensity=Symbol("|S|²")) isa Plots.Plot
+    @test_throws ArgumentError diffraction_pattern(lat, state_neel, ml; intensity=:bogus)
+
+    # 1D regular mesh: stem plot.
+    line = LineLattice(8, PeriodicAxis())
+    state_1d = ones(Int8, num_sites(line))
+    p1d = diffraction_pattern(line, state_1d, reciprocal_lattice(line))
+    @test p1d isa Plots.Plot
+
+    # 2D irregular ml (BraggPeakSet) — falls back to scatter recipe.
+    peaks = [SVector(0.0, 0.0), SVector(0.5, 0.0), SVector(0.0, 0.5)]
+    bps = BraggPeakSet{2,4,Float64}(peaks, [1.0, 0.5, 0.5], [(0, 0, 0, 0) for _ in 1:3])
+    p_bps = diffraction_pattern(lat, state_neel, bps)
+    @test p_bps isa Plots.Plot
 end

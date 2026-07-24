@@ -51,6 +51,23 @@ function elements end
 
 Real-space position of the `i`-th element of centring `e` on `lat`.
 See `Bond.jl` for the default `VertexCenter` / `BondCenter` methods.
+
+# Indexing convention
+
+The integer `i` follows the enumeration order of:
+
+- `1:num_sites(lat)` for `VertexCenter`,
+- `enumerate(bonds(lat))` for `BondCenter`,
+- `enumerate(plaquettes(lat))` for `PlaquetteCenter`.
+
+This means `i` is **lattice-specific**: a concrete lattice that
+overrides `bonds(lat)` / `plaquettes(lat)` (or returns them in a
+different order from another lattice type) implicitly redefines what
+`i` means here. Generic code that round-trips via integer indices is
+safe only within a single lattice instance; for cross-lattice
+identification of an element, materialise it through `elements(lat, e)`
+instead. A typed `BondIndex` / `PlaquetteIndex` wrapper that makes
+this contract type-level is tracked as a follow-up.
 """
 function element_position end
 

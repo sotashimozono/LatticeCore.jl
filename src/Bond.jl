@@ -81,7 +81,23 @@ end
 
 num_elements(lat::AbstractLattice, ::VertexCenter) = num_sites(lat)
 function num_elements(lat::AbstractLattice, ::BondCenter)
-    return count(_ -> true, bonds(lat))
+    return _iter_length(bonds(lat))
+end
+
+# Internal: O(1) length when the iterator declares one, otherwise a
+# single counting pass. This avoids `count(_ -> true, …)` walking the
+# iterator a second time when concrete lattices already know the size
+# (e.g. via a `Vector{Bond}` override of `bonds(lat)`). Concrete
+# lattices retain the option to override `num_elements(lat, …)`
+# directly with an O(1) closed-form.
+function _iter_length(itr)
+    return _iter_length(itr, Base.IteratorSize(itr))
+end
+_iter_length(itr, ::Base.HasLength) = length(itr)
+_iter_length(itr, ::Base.HasShape) = length(itr)
+_iter_length(itr, ::Base.SizeUnknown) = count(_ -> true, itr)
+function _iter_length(itr, ::Base.IsInfinite)
+    return throw(ArgumentError("cannot take length of infinite iterator"))
 end
 
 # elements -------------------------------------------------------------
@@ -93,8 +109,20 @@ elements(lat::AbstractLattice, ::BondCenter) = bonds(lat)
 
 element_position(lat::AbstractLattice, ::VertexCenter, i::Int) = position(lat, i)
 function element_position(lat::AbstractLattice, ::BondCenter, i::Int)
-    bs = collect(bonds(lat))
-    return bond_center(lat, bs[i])
+    return bond_center(lat, _nth(bonds(lat), i))
+end
+
+# Internal: fetch the i-th element of an iterator without collecting.
+# Used by generic element_position / incident defaults so we avoid
+# materialising the full bond/plaquette iterator just to index once.
+function _nth(itr, i::Int)
+    i >= 1 || throw(BoundsError(itr, i))
+    k = 0
+    for x in itr
+        k += 1
+        k == i && return x
+    end
+    return throw(BoundsError(itr, i))
 end
 
 # element_positions ----------------------------------------------------

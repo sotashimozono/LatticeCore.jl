@@ -7,6 +7,7 @@
 
 [![codecov](https://codecov.io/gh/sotashimozono/LatticeCore.jl/graph/badge.svg?token=oSYKPUteiH)](https://codecov.io/gh/sotashimozono/LatticeCore.jl)
 [![Build Status](https://github.com/sotashimozono/LatticeCore.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/sotashimozono/LatticeCore.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **LatticeCore** is the abstract interface layer for a family of
@@ -43,10 +44,13 @@ dependency.
   without a breaking rewrite.
 - **Momentum-space layer**: `AbstractMomentumLattice`,
   `PeriodicMomentumLattice`, `monkhorst_pack` / `gamma_centered`
-  mesh constructors, and a naive `structure_factor`. Type
-  skeletons (`HyperReciprocalLattice`, `BraggPeakSet`,
-  `AcceptanceWindow`) for downstream quasicrystal Fourier
-  analysis.
+  mesh constructors, and `structure_factor` with trait-dispatched
+  fast paths — `LatticeCoreFFTWExt` runs an O(N log N) FFT on
+  Bravais lattices when `using FFTW`, and `LatticeCoreNFFTExt`
+  reserves the NUFFT entry point for the quasicrystal case
+  (issue #28). Type skeletons (`HyperReciprocalLattice`,
+  `BraggPeakSet`, `AcceptanceWindow`) for downstream quasicrystal
+  Fourier analysis.
 - **Lazy / infinite lattice hooks**: `materialize(abstract; cutoff)`
   for the infinite-abstract → finite-materialisation pattern, and
   `require_finite(lat)` for Monte Carlo entry-point guards.
@@ -118,6 +122,13 @@ LatticeCore.jl            (this package, abstract interface)
 LatticeCore itself is deliberately small. It is the contract every
 downstream package agrees on; it does not ship a production lattice
 catalogue, a quasicrystal generator, or a Monte Carlo runtime.
+
+## Quality assurance
+
+The test suite runs [Aqua.jl](https://github.com/JuliaTesting/Aqua.jl)
+on every CI build (ambiguities, unbound type parameters, undefined
+exports, stale deps, compat bounds, piracy). All checks pass on
+`main`.
 
 ## License
 
