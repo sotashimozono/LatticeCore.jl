@@ -62,6 +62,11 @@ function cell_bonds(::InfiniteSquareLattice)
     return (CellBond(1, 1, (1, 0), :nearest), CellBond(1, 1, (0, 1), :nearest))
 end
 
+# The single unit-square plaquette, corners in cyclic order.
+function plaquette_orbits(::InfiniteSquareLattice)
+    return (PlaquetteRule([(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)], :square),)
+end
+
 # ---- Size / traits ---------------------------------------------------
 
 size_trait(::InfiniteSquareLattice) = InfiniteSize()

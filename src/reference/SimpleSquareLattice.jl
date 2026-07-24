@@ -218,6 +218,10 @@ function cell_bonds(::SimpleSquareLattice)
     return (CellBond(1, 1, (1, 0), :nearest), CellBond(1, 1, (0, 1), :nearest))
 end
 
+function plaquette_orbits(::SimpleSquareLattice)
+    return (PlaquetteRule([(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)], :square),)
+end
+
 function reciprocal_lattice(lat::SimpleSquareLattice{T}) where {T}
     reciprocal_support(lat) isa HasReciprocal || throw(
         ArgumentError(
