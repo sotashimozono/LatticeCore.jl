@@ -3,6 +3,23 @@ using LatticeCore: CellSite, CellBond
 using StaticArrays
 using Test
 
+# A minimal two-basis 1D lattice used to exercise the asymmetric-motif
+# (`src != dst`) paths of `incident_cell_bonds` that the single-basis
+# square lattices cannot distinguish. Basis site A sits at 0.0, B at
+# 0.5; A–B are bonded within a cell and B–A across the +1 cell, so the
+# chain is …A B A B… with coordination 2.
+struct TwoBasisChain <: LatticeCore.AbstractLattice{1,Float64} end
+LatticeCore.translation_vectors(::TwoBasisChain) = SMatrix{1,1,Float64}(1.0)
+LatticeCore.num_basis_sites(::TwoBasisChain) = 2
+function LatticeCore.basis_position(::TwoBasisChain, b::Int)
+    b == 1 && return SVector(0.0)
+    b == 2 && return SVector(0.5)
+    return throw(ArgumentError("bad basis $b"))
+end
+function LatticeCore.cell_bonds(::TwoBasisChain)
+    return (CellBond(1, 2, (0,), :nearest), CellBond(2, 1, (1,), :nearest))
+end
+
 @testset "CellSite / CellBond construction" begin
     s = CellSite((3, -2))
     @test s isa CellSite{2}
@@ -102,4 +119,67 @@ end
     # a PBC interior site steps to the four unit neighbours.
     inf_shell = Set(b.offset for b in incident_cell_bonds(inf, CellSite((0, 0))))
     @test inf_shell == Set(SVector.([(1, 0), (-1, 0), (0, 1), (0, -1)]))
+end
+
+@testset "basis_position default and error path" begin
+    inf = InfiniteSquareLattice()
+    @test basis_position(inf, 1) == SVector(0.0, 0.0)
+    # The single-basis default rejects any other basis index.
+    @test_throws ArgumentError basis_position(inf, 2)
+end
+
+@testset "out-of-range basis is rejected, not silently empty" begin
+    inf = InfiniteSquareLattice()
+    # A malformed CellSite must fail loudly rather than return an empty
+    # (wrong) coordination shell.
+    @test_throws ArgumentError incident_cell_bonds(inf, CellSite((0, 0), 2))
+    @test_throws ArgumentError neighbors_at(inf, CellSite((0, 0), 2))
+    @test_throws ArgumentError incident_cell_bonds(inf, CellSite((0, 0), 0))
+    # The valid basis still works.
+    @test length(neighbors_at(inf, CellSite((0, 0), 1))) == 4
+end
+
+@testset "materialize propagates a custom site layout" begin
+    layout = UniformLayout(XYSite())
+    inf = InfiniteSquareLattice(; layout=layout)
+    @test site_layout(inf) == layout
+    @test site_type(inf, 1) == XYSite()
+
+    fin = materialize(inf; dims=(3, 3))
+    @test site_layout(fin) == layout
+    @test site_type(fin, 1) == XYSite()
+end
+
+@testset "asymmetric (src != dst) motif — reverse-orientation branch" begin
+    chain = TwoBasisChain()
+    @test num_basis_sites(chain) == 2
+    @test collect(site_orbits(chain)) == [1, 2]
+
+    # Positions within a cell, and across cells, computed lazily.
+    @test cell_position(chain, (0,), 1) == SVector(0.0)
+    @test cell_position(chain, (0,), 2) == SVector(0.5)
+    @test cell_position(chain, (2,), 2) == SVector(2.5)
+
+    # Basis A (=1) at cell 0: forward branch of bond (1,2,(0,)) → B in
+    # this cell; reverse branch of bond (2,1,(1,)) → B in the −1 cell.
+    ibA = incident_cell_bonds(chain, CellSite((0,), 1))
+    @test all(b.src == 1 for b in ibA)
+    @test Set((b.dst, b.offset) for b in ibA) == Set([(2, SVector(0)), (2, SVector(-1))])
+    nbrA = neighbors_at(chain, CellSite((0,), 1))
+    @test Set((n.cell, n.basis) for n in nbrA) == Set([(SVector(0), 2), (SVector(-1), 2)])
+
+    # Basis B (=2) at cell 0: reverse branch of bond (1,2,(0,)) → A in
+    # this cell (offset negated to (0,)); forward branch of bond
+    # (2,1,(1,)) → A in the +1 cell. This is the path the single-basis
+    # square motif cannot exercise.
+    ibB = incident_cell_bonds(chain, CellSite((0,), 2))
+    @test all(b.src == 2 for b in ibB)
+    @test Set((b.dst, b.offset) for b in ibB) == Set([(1, SVector(0)), (1, SVector(1))])
+    nbrB = neighbors_at(chain, CellSite((0,), 2))
+    @test Set((n.cell, n.basis) for n in nbrB) == Set([(SVector(0), 1), (SVector(1), 1)])
+
+    # Reciprocity: A at cell 0 lists B at cell −1 as a neighbour, and B
+    # at cell −1 must list A at cell 0 back.
+    nbrB_m1 = neighbors_at(chain, CellSite((-1,), 2))
+    @test (SVector(0), 1) in Set((n.cell, n.basis) for n in nbrB_m1)
 end

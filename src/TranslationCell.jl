@@ -47,10 +47,13 @@ home cell to basis site `dst` in the cell displaced by `offset` (target
 cell `= home cell + offset`). `type` is a dispatch tag (e.g.
 `:nearest`).
 
-Each *undirected* bond of the lattice appears exactly once in the motif
-returned by [`cell_bonds`](@ref). The lazy accessor
-[`incident_cell_bonds`](@ref) re-anchors motif bonds to a requested
-site, orienting them outward from that site.
+By convention, each *undirected* bond of the lattice should appear
+exactly once in the motif returned by [`cell_bonds`](@ref) — this is
+the implementer's responsibility and is **not** validated. Listing a
+bond twice (e.g. both `(1, 1, (1, 0))` and `(1, 1, (-1, 0))`) would
+double-count neighbours. The lazy accessor [`incident_cell_bonds`](@ref)
+re-anchors motif bonds to a requested site, orienting them outward from
+that site.
 """
 struct CellBond{D}
     src::Int
@@ -110,10 +113,11 @@ end
 """
     cell_bonds(lat::AbstractLattice) → iterator of CellBond{D}
 
-The bond motif: a finite iterator listing each undirected bond of the
-lattice once, as a [`CellBond`](@ref). This is the bond analogue of the
-site basis and the key object for placing bond tensors in the
-thermodynamic limit.
+The bond motif: a finite iterator of [`CellBond`](@ref), which by
+convention lists each undirected bond of the lattice exactly once (see
+[`CellBond`](@ref) for the double-counting caveat). This is the bond
+analogue of the site basis and the key object for placing bond tensors
+in the thermodynamic limit.
 
 Concrete translationally invariant lattices must implement this.
 """
@@ -172,6 +176,10 @@ sees its full coordination shell. Computed lazily from
 [`cell_bonds`](@ref); no global bond list is built.
 """
 function incident_cell_bonds(lat::AbstractLattice{D}, s::CellSite{D}) where {D}
+    nb = num_basis_sites(lat)
+    1 <= s.basis <= nb || throw(
+        ArgumentError("CellSite basis $(s.basis) is out of range 1:$nb for $(typeof(lat))"),
+    )
     out = CellBond{D}[]
     for cb in cell_bonds(lat)
         if cb.src == s.basis
