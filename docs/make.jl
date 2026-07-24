@@ -64,6 +64,7 @@ makedocs(;
             "Lattice element" => "reference/lattice_element.md",
             "Momentum space" => "reference/momentum.md",
             "Lazy / infinite" => "reference/lazy_infinite.md",
+            "Translation cell / orbits" => "reference/translation_cell.md",
             "Reference lattices" => "reference/reference_lattices.md",
         ],
         "Design notes" => "design.md",

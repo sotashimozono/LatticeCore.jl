@@ -223,7 +223,7 @@ end
     plaquette_orbits(lat::AbstractLattice) → iterator of PlaquetteRule
 
 Representatives of the plaquette (face) orbits under the translation
-group — the unit cell's plaquette rules. Defaults to `()` (lattices
+group — the unit cell's `PlaquetteRule`s. Defaults to `()` (lattices
 with no plaquette notion). The bond / site analogues are
 [`bond_orbits`](@ref) / [`site_orbits`](@ref).
 """
@@ -237,7 +237,7 @@ group: [`site_orbits`](@ref) for [`VertexCenter`](@ref),
 [`bond_orbits`](@ref) for [`BondCenter`](@ref), and
 [`plaquette_orbits`](@ref) for [`PlaquetteCenter`](@ref). A finite
 fundamental domain — defined for infinite lattices, where the
-enumeration [`elements`](@ref) is not.
+enumeration `elements` is not.
 """
 element_orbits(lat::AbstractLattice, ::VertexCenter) = site_orbits(lat)
 element_orbits(lat::AbstractLattice, ::BondCenter) = bond_orbits(lat)
@@ -253,10 +253,10 @@ evaluated on the home unit cell via [`cell_position`](@ref):
   position;
 - [`BondCenter`](@ref), `rep::`[`CellBond`](@ref) → the midpoint of the
   bond's two endpoints;
-- [`PlaquetteCenter`](@ref), `rep::`[`PlaquetteRule`](@ref) → the
-  centroid of its corner sites.
+- [`PlaquetteCenter`](@ref), `rep::PlaquetteRule` → the centroid of its
+  corner sites.
 
-Consistent with [`bond_center`](@ref) / [`plaquette_center`](@ref), but
+Consistent with [`bond_center`](@ref) / `plaquette_center`, but
 evaluated on the fundamental domain: it needs no boundary wrapping (the
 motif carries unwrapped cell offsets) and works for infinite lattices.
 """
