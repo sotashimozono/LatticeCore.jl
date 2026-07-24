@@ -21,9 +21,11 @@ include("Indexing.jl")
 include("MomentumLattice.jl")
 include("StructureFactor.jl")
 include("LazyInfinite.jl")
+include("TranslationCell.jl")
 include("Plot.jl")
 include("reference/LineLattice.jl")
 include("reference/SimpleSquareLattice.jl")
+include("reference/InfiniteSquareLattice.jl")
 
 # ---- AbstractLattice ----
 export AbstractLattice
@@ -85,11 +87,17 @@ export AcceptanceWindow, HyperReciprocalLattice, BraggPeakSet
 # ---- Lazy / infinite ----
 export materialize, require_finite
 
+# ---- Translation-cell (unit-cell motif) layer ----
+export CellSite, CellBond
+export translation_vectors, num_basis_sites, basis_position, cell_bonds
+export site_orbits, bond_orbits
+export cell_position, incident_cell_bonds, neighbors_at
+
 # ---- Plotting (methods live in LatticeCorePlotsExt) ----
 export plot_lattice, plot_bonds!, plot_sites!
 export diffraction_pattern
 
 # ---- Reference lattices ----
-export LineLattice, SimpleSquareLattice, basis_vectors
+export LineLattice, SimpleSquareLattice, InfiniteSquareLattice, basis_vectors
 
 end # module LatticeCore

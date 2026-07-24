@@ -199,7 +199,23 @@ Real-space basis matrix. For the unit-spacing reference square this
 is the 2×2 identity.
 """
 function basis_vectors(::SimpleSquareLattice{T}) where {T}
-    SMatrix{2,2,T}(one(T), zero(T), zero(T), one(T))
+    return SMatrix{2,2,T}(one(T), zero(T), zero(T), one(T))
+end
+
+# ---- Translation-cell motif ------------------------------------------
+#
+# The finite square lattice shares its unit-cell motif with
+# `InfiniteSquareLattice`, so a TN builder written against
+# `site_orbits` / `bond_orbits` runs unchanged on both. Finiteness and
+# the boundary condition only affect how the motif is tiled and wrapped,
+# not the motif itself.
+
+translation_vectors(l::SimpleSquareLattice) = basis_vectors(l)
+
+num_basis_sites(::SimpleSquareLattice) = 1
+
+function cell_bonds(::SimpleSquareLattice)
+    return (CellBond(1, 1, (1, 0), :nearest), CellBond(1, 1, (0, 1), :nearest))
 end
 
 function reciprocal_lattice(lat::SimpleSquareLattice{T}) where {T}
