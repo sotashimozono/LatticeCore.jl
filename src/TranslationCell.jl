@@ -206,3 +206,80 @@ materialised.
 function neighbors_at(lat::AbstractLattice{D}, s::CellSite{D}) where {D}
     return [CellSite{D}(s.cell + cb.offset, cb.dst) for cb in incident_cell_bonds(lat, s)]
 end
+
+# ---- Element centring on the fundamental domain (orbits) ------------
+#
+# The [`AbstractLatticeElement`](@ref) centring trait — `VertexCenter` /
+# `BondCenter` / `PlaquetteCenter` — applied at the *orbit* level: one
+# representative per translation orbit, plus its real-space
+# representative position. Unlike the enumeration API
+# (`elements` / `element_position`, which walk `1:num_sites` / `bonds` /
+# `plaquettes`), these read the finite fundamental domain and so are
+# defined for infinite lattices — the geometry substrate for attaching
+# one degree of freedom per site / bond / plaquette orbit in the
+# thermodynamic limit.
+
+"""
+    plaquette_orbits(lat::AbstractLattice) → iterator of PlaquetteRule
+
+Representatives of the plaquette (face) orbits under the translation
+group — the unit cell's plaquette rules. Defaults to `()` (lattices
+with no plaquette notion). The bond / site analogues are
+[`bond_orbits`](@ref) / [`site_orbits`](@ref).
+"""
+plaquette_orbits(::AbstractLattice) = ()
+
+"""
+    element_orbits(lat::AbstractLattice, e::AbstractLatticeElement)
+
+Representatives of the orbits of centring `e` under the translation
+group: [`site_orbits`](@ref) for [`VertexCenter`](@ref),
+[`bond_orbits`](@ref) for [`BondCenter`](@ref), and
+[`plaquette_orbits`](@ref) for [`PlaquetteCenter`](@ref). A finite
+fundamental domain — defined for infinite lattices, where the
+enumeration [`elements`](@ref) is not.
+"""
+element_orbits(lat::AbstractLattice, ::VertexCenter) = site_orbits(lat)
+element_orbits(lat::AbstractLattice, ::BondCenter) = bond_orbits(lat)
+element_orbits(lat::AbstractLattice, ::PlaquetteCenter) = plaquette_orbits(lat)
+
+"""
+    element_orbit_position(lat, e::AbstractLatticeElement, rep) → SVector{D,T}
+
+Real-space position of an orbit representative `rep` of centring `e`,
+evaluated on the home unit cell via [`cell_position`](@ref):
+
+- [`VertexCenter`](@ref), `rep::Int` (basis index) → the basis-site
+  position;
+- [`BondCenter`](@ref), `rep::`[`CellBond`](@ref) → the midpoint of the
+  bond's two endpoints;
+- [`PlaquetteCenter`](@ref), `rep::`[`PlaquetteRule`](@ref) → the
+  centroid of its corner sites.
+
+Consistent with [`bond_center`](@ref) / [`plaquette_center`](@ref), but
+evaluated on the fundamental domain: it needs no boundary wrapping (the
+motif carries unwrapped cell offsets) and works for infinite lattices.
+"""
+function element_orbit_position(
+    lat::AbstractLattice{D,T}, ::VertexCenter, b::Int
+) where {D,T}
+    return cell_position(lat, zero(SVector{D,Int}), b)
+end
+
+function element_orbit_position(
+    lat::AbstractLattice{D,T}, ::BondCenter, cb::CellBond{D}
+) where {D,T}
+    p_src = cell_position(lat, zero(SVector{D,Int}), cb.src)
+    p_dst = cell_position(lat, cb.offset, cb.dst)
+    return (p_src + p_dst) / 2
+end
+
+function element_orbit_position(
+    lat::AbstractLattice{2,T}, ::PlaquetteCenter, pr::PlaquetteRule
+) where {T}
+    acc = zero(SVector{2,T})
+    for (sub, dx, dy) in pr.corners
+        acc += cell_position(lat, SVector{2,Int}(dx, dy), sub)
+    end
+    return acc / length(pr.corners)
+end

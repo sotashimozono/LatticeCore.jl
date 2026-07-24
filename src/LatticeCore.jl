@@ -97,8 +97,9 @@ export materialize, require_finite
 # ---- Translation-cell (unit-cell motif) layer ----
 export CellSite, CellBond
 export translation_vectors, num_basis_sites, basis_position, cell_bonds
-export site_orbits, bond_orbits
+export site_orbits, bond_orbits, plaquette_orbits
 export cell_position, incident_cell_bonds, neighbors_at
+export element_orbits, element_orbit_position
 
 # ---- Scale changes ----
 export AbstractScalingRule, NoScaling, LinearScaling, SubstitutionScaling
