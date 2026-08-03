@@ -47,10 +47,10 @@ chain(N) = LineLattice(N, OpenAxis())
     @testset "inverse participation ratio" begin
         n = 40
         @test inverse_participation_ratio(fill(1 / sqrt(n), n)) ≈ 1 / n rtol = 1e-12
-        e1 = zeros(n);
+        e1 = zeros(n)
         e1[3] = 1.0
         @test inverse_participation_ratio(e1) == 1.0
-        s = zeros(n);
+        s = zeros(n)
         s[1:5] .= 1 / sqrt(5)
         @test inverse_participation_ratio(s) ≈ 1 / 5 rtol = 1e-12
         @test_throws ArgumentError inverse_participation_ratio(zeros(n))

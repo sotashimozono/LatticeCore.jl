@@ -1,6 +1,6 @@
 name = "LatticeCore"
 uuid = "84b1cbd8-bc58-4618-bc4f-b46a399f49f1"
-version = "0.12.7"
+version = "0.12.8"
 authors = ["sota shimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
@@ -32,6 +32,7 @@ Random = "1"
 SparseArrays = "1"
 StaticArrays = "1"
 Test = "1"
+TestShards = "0.3"
 julia = "1.10"
 
 [extras]
@@ -42,6 +43,7 @@ NFFT = "efe261a4-0d2b-5849-be55-fc731d526b0d"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TestShards = "acceef1d-f5e0-4fe4-a546-818dc56ce7b2"
 
 [targets]
-test = ["Aqua", "CairoMakie", "FFTW", "NFFT", "Plots", "Random", "Test"]
+test = ["Aqua", "CairoMakie", "FFTW", "NFFT", "Plots", "Random", "Test", "TestShards"]

@@ -57,11 +57,11 @@ function tight_binding_hamiltonian(
     @inbounds for k in eachindex(bs)
         b = bs[k]
         tij = -float(hoppings[k])
-        push!(Is, b.i);
-        push!(Js, b.j);
+        push!(Is, b.i)
+        push!(Js, b.j)
         push!(Vs, tij)
-        push!(Is, b.j);
-        push!(Js, b.i);
+        push!(Is, b.j)
+        push!(Js, b.i)
         push!(Vs, tij)
     end
     ov = _onsite_vector(onsite, N)
